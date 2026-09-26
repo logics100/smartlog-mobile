@@ -686,6 +686,25 @@ class ApiService {
   // LECTURER
   // ===========================================================================
 
+  static Future<Map<String, dynamic>> getLecturerDashboard() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/lecturer/dashboard'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(
+      data['message'] ?? 'Unable to load lecturer dashboard',
+    );
+  }
   static Future<List<dynamic>>
       getLecturerPendingVerifications() async {
     final response = await http.get(
