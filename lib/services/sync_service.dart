@@ -1,5 +1,6 @@
 import 'api_service.dart';
 import 'local_database_service.dart';
+import 'offline_auth_service.dart';
 
 class SyncService {
   static Future<Map<String, dynamic>> syncPendingRecords() async {
@@ -24,6 +25,42 @@ class SyncService {
         'attendance_synced': 0,
         'clinical_synced': 0,
       };
+    }
+
+    // =========================================================
+    // RESTORE ONLINE AUTHENTICATION AFTER OFFLINE USE
+    // =========================================================
+
+    if (ApiService.token == null) {
+      final credentials = await OfflineAuthService.getSavedStudentCredentials();
+
+      if (credentials == null) {
+        return {
+          'success': false,
+          'message': 'Please sign in online before syncing.',
+          'synced': 0,
+          'failed': 0,
+          'attendance_synced': 0,
+          'clinical_synced': 0,
+        };
+      }
+
+      try {
+        await ApiService.login(
+          login: credentials['identifier']!,
+          password: credentials['password']!,
+        );
+      } catch (_) {
+        return {
+          'success': false,
+          'message':
+              'Unable to restore your SmartLog session. Please sign in online.',
+          'synced': 0,
+          'failed': 0,
+          'attendance_synced': 0,
+          'clinical_synced': 0,
+        };
+      }
     }
 
     // =========================================================

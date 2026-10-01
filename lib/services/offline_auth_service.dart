@@ -72,6 +72,17 @@ class OfflineAuthService {
     }
   }
 
+  static Future<Map<String, String>?> getSavedStudentCredentials() async {
+    final identifier = await _storage.read(key: _identifierKey);
+    final password = await _storage.read(key: _passwordKey);
+
+    if (identifier == null || password == null) {
+      return null;
+    }
+
+    return {'identifier': identifier, 'password': password};
+  }
+
   static Future<bool> hasOfflineStudentLogin() async {
     final user = await _storage.read(key: _userKey);
 
