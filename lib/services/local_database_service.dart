@@ -35,13 +35,9 @@ class LocalDatabaseService {
 
       databaseFactory = databaseFactoryFfi;
 
-      final databasePath =
-          await databaseFactory.getDatabasesPath();
+      final databasePath = await databaseFactory.getDatabasesPath();
 
-      final path = join(
-        databasePath,
-        'smartlog_local.db',
-      );
+      final path = join(databasePath, 'smartlog_local.db');
 
       return databaseFactory.openDatabase(
         path,
@@ -54,13 +50,9 @@ class LocalDatabaseService {
     }
 
     // Android/iOS SQLite.
-    final databasePath =
-        await mobile_sqflite.getDatabasesPath();
+    final databasePath = await mobile_sqflite.getDatabasesPath();
 
-    final path = join(
-      databasePath,
-      'smartlog_local.db',
-    );
+    final path = join(databasePath, 'smartlog_local.db');
 
     return mobile_sqflite.openDatabase(
       path,
@@ -74,10 +66,7 @@ class LocalDatabaseService {
   // DATABASE CREATION
   // ===========================================================================
 
-  static Future<void> _onCreate(
-    Database db,
-    int version,
-  ) async {
+  static Future<void> _onCreate(Database db, int version) async {
     await _createOfflineAttendanceTable(db);
 
     await _createOfflineClinicalEntriesTable(db);
@@ -95,12 +84,8 @@ class LocalDatabaseService {
   // TABLE CREATION HELPERS
   // ===========================================================================
 
-  static Future<void>
-      _createOfflineAttendanceTable(
-    Database db,
-  ) async {
-    await db.execute(
-      '''
+  static Future<void> _createOfflineAttendanceTable(Database db) async {
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS offline_attendance (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         server_id INTEGER,
@@ -115,16 +100,11 @@ class LocalDatabaseService {
         sync_error TEXT,
         created_at TEXT NOT NULL
       )
-      ''',
-    );
+      ''');
   }
 
-  static Future<void>
-      _createOfflineClinicalEntriesTable(
-    Database db,
-  ) async {
-    await db.execute(
-      '''
+  static Future<void> _createOfflineClinicalEntriesTable(Database db) async {
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS offline_clinical_entries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         server_id INTEGER,
@@ -140,86 +120,61 @@ class LocalDatabaseService {
         sync_error TEXT,
         created_at TEXT NOT NULL
       )
-      ''',
-    );
+      ''');
   }
 
-  static Future<void>
-      _createStudentLogbooksCacheTable(
-    Database db,
-  ) async {
-    await db.execute(
-      '''
+  static Future<void> _createStudentLogbooksCacheTable(Database db) async {
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS cached_student_logbooks (
         id INTEGER PRIMARY KEY,
         data TEXT NOT NULL,
         cached_at TEXT NOT NULL
       )
-      ''',
-    );
+      ''');
   }
 
-  static Future<void>
-      _createLogbookDetailsCacheTable(
-    Database db,
-  ) async {
-    await db.execute(
-      '''
+  static Future<void> _createLogbookDetailsCacheTable(Database db) async {
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS cached_logbook_details (
         logbook_id INTEGER PRIMARY KEY,
         data TEXT NOT NULL,
         cached_at TEXT NOT NULL
       )
-      ''',
-    );
+      ''');
   }
 
-  static Future<void>
-      _createAttendanceRecordsCacheTable(
-    Database db,
-  ) async {
-    await db.execute(
-      '''
+  static Future<void> _createAttendanceRecordsCacheTable(Database db) async {
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS cached_attendance_records (
         server_id INTEGER PRIMARY KEY,
         logbook_id INTEGER NOT NULL,
         data TEXT NOT NULL,
         cached_at TEXT NOT NULL
       )
-      ''',
-    );
+      ''');
 
-    await db.execute(
-      '''
+    await db.execute('''
       CREATE INDEX IF NOT EXISTS
       idx_cached_attendance_logbook
       ON cached_attendance_records(logbook_id)
-      ''',
-    );
+      ''');
   }
 
-  static Future<void>
-      _createClinicalEntriesCacheTable(
-    Database db,
-  ) async {
-    await db.execute(
-      '''
+  static Future<void> _createClinicalEntriesCacheTable(Database db) async {
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS cached_clinical_entries (
         server_id INTEGER PRIMARY KEY,
         logbook_id INTEGER NOT NULL,
         data TEXT NOT NULL,
         cached_at TEXT NOT NULL
       )
-      ''',
-    );
+      ''');
 
-    await db.execute(
-      '''
+    await db.execute('''
       CREATE INDEX IF NOT EXISTS
       idx_cached_clinical_entries_logbook
       ON cached_clinical_entries(logbook_id)
-      ''',
-    );
+      ''');
   }
 
   // ===========================================================================
@@ -243,21 +198,13 @@ class LocalDatabaseService {
     */
 
     if (oldVersion < 3) {
-      await _createStudentLogbooksCacheTable(
-        db,
-      );
+      await _createStudentLogbooksCacheTable(db);
 
-      await _createLogbookDetailsCacheTable(
-        db,
-      );
+      await _createLogbookDetailsCacheTable(db);
 
-      await _createOfflineAttendanceTable(
-        db,
-      );
+      await _createOfflineAttendanceTable(db);
 
-      await _createOfflineClinicalEntriesTable(
-        db,
-      );
+      await _createOfflineClinicalEntriesTable(db);
     }
 
     /*
@@ -280,13 +227,9 @@ class LocalDatabaseService {
     */
 
     if (oldVersion < 4) {
-      await _createAttendanceRecordsCacheTable(
-        db,
-      );
+      await _createAttendanceRecordsCacheTable(db);
 
-      await _createClinicalEntriesCacheTable(
-        db,
-      );
+      await _createClinicalEntriesCacheTable(db);
     }
   }
 
@@ -305,47 +248,36 @@ class LocalDatabaseService {
   }) async {
     final db = await database;
 
-    return db.insert(
-      'offline_attendance',
-      {
-        'server_id': null,
-        'logbook_id': logbookId,
-        'attendance_date': attendanceDate,
-        'facility_name': facilityName,
-        'clinical_unit': clinicalUnit,
-        'start_time': startTime,
-        'finish_time': finishTime,
-        'total_hours': totalHours,
-        'sync_status': 'PENDING_SYNC',
-        'sync_error': null,
-        'created_at':
-            DateTime.now().toIso8601String(),
-      },
-    );
+    return db.insert('offline_attendance', {
+      'server_id': null,
+      'logbook_id': logbookId,
+      'attendance_date': attendanceDate,
+      'facility_name': facilityName,
+      'clinical_unit': clinicalUnit,
+      'start_time': startTime,
+      'finish_time': finishTime,
+      'total_hours': totalHours,
+      'sync_status': 'PENDING_SYNC',
+      'sync_error': null,
+      'created_at': DateTime.now().toIso8601String(),
+    });
   }
 
-  static Future<List<Map<String, dynamic>>>
-      getPendingAttendance() async {
+  static Future<List<Map<String, dynamic>>> getPendingAttendance() async {
     final db = await database;
 
     return db.query(
       'offline_attendance',
       where: 'sync_status = ?',
-      whereArgs: [
-        'PENDING_SYNC',
-      ],
+      whereArgs: ['PENDING_SYNC'],
       orderBy: 'id ASC',
     );
   }
 
-  static Future<List<Map<String, dynamic>>>
-      getAllOfflineAttendance() async {
+  static Future<List<Map<String, dynamic>>> getAllOfflineAttendance() async {
     final db = await database;
 
-    return db.query(
-      'offline_attendance',
-      orderBy: 'id DESC',
-    );
+    return db.query('offline_attendance', orderBy: 'id DESC');
   }
 
   static Future<void> markAttendanceSynced({
@@ -356,15 +288,9 @@ class LocalDatabaseService {
 
     await db.update(
       'offline_attendance',
-      {
-        'server_id': serverId,
-        'sync_status': 'SYNCED',
-        'sync_error': null,
-      },
+      {'server_id': serverId, 'sync_status': 'SYNCED', 'sync_error': null},
       where: 'id = ?',
-      whereArgs: [
-        localId,
-      ],
+      whereArgs: [localId],
     );
   }
 
@@ -376,14 +302,9 @@ class LocalDatabaseService {
 
     await db.update(
       'offline_attendance',
-      {
-        'sync_status': 'PENDING_SYNC',
-        'sync_error': error,
-      },
+      {'sync_status': 'PENDING_SYNC', 'sync_error': error},
       where: 'id = ?',
-      whereArgs: [
-        localId,
-      ],
+      whereArgs: [localId],
     );
   }
 
@@ -403,48 +324,38 @@ class LocalDatabaseService {
   }) async {
     final db = await database;
 
-    return db.insert(
-      'offline_clinical_entries',
-      {
-        'server_id': null,
-        'logbook_id': logbookId,
-        'logbook_item_id': logbookItemId,
-        'requirement_id': requirementId,
-        'activity_date': activityDate,
-        'activity_time': activityTime,
-        'facility_name': facilityName,
-        'clinical_area': clinicalArea,
-        'activity_details': activityDetails,
-        'sync_status': 'PENDING_SYNC',
-        'sync_error': null,
-        'created_at':
-            DateTime.now().toIso8601String(),
-      },
-    );
+    return db.insert('offline_clinical_entries', {
+      'server_id': null,
+      'logbook_id': logbookId,
+      'logbook_item_id': logbookItemId,
+      'requirement_id': requirementId,
+      'activity_date': activityDate,
+      'activity_time': activityTime,
+      'facility_name': facilityName,
+      'clinical_area': clinicalArea,
+      'activity_details': activityDetails,
+      'sync_status': 'PENDING_SYNC',
+      'sync_error': null,
+      'created_at': DateTime.now().toIso8601String(),
+    });
   }
 
-  static Future<List<Map<String, dynamic>>>
-      getPendingClinicalEntries() async {
+  static Future<List<Map<String, dynamic>>> getPendingClinicalEntries() async {
     final db = await database;
 
     return db.query(
       'offline_clinical_entries',
       where: 'sync_status = ?',
-      whereArgs: [
-        'PENDING_SYNC',
-      ],
+      whereArgs: ['PENDING_SYNC'],
       orderBy: 'id ASC',
     );
   }
 
   static Future<List<Map<String, dynamic>>>
-      getAllOfflineClinicalEntries() async {
+  getAllOfflineClinicalEntries() async {
     final db = await database;
 
-    return db.query(
-      'offline_clinical_entries',
-      orderBy: 'id DESC',
-    );
+    return db.query('offline_clinical_entries', orderBy: 'id DESC');
   }
 
   static Future<void> markClinicalEntrySynced({
@@ -455,15 +366,9 @@ class LocalDatabaseService {
 
     await db.update(
       'offline_clinical_entries',
-      {
-        'server_id': serverId,
-        'sync_status': 'SYNCED',
-        'sync_error': null,
-      },
+      {'server_id': serverId, 'sync_status': 'SYNCED', 'sync_error': null},
       where: 'id = ?',
-      whereArgs: [
-        localId,
-      ],
+      whereArgs: [localId],
     );
   }
 
@@ -475,14 +380,9 @@ class LocalDatabaseService {
 
     await db.update(
       'offline_clinical_entries',
-      {
-        'sync_status': 'PENDING_SYNC',
-        'sync_error': error,
-      },
+      {'sync_status': 'PENDING_SYNC', 'sync_error': error},
       where: 'id = ?',
-      whereArgs: [
-        localId,
-      ],
+      whereArgs: [localId],
     );
   }
 
@@ -490,84 +390,53 @@ class LocalDatabaseService {
   // STUDENT LOGBOOK CACHE
   // ===========================================================================
 
-  static Future<void> cacheStudentLogbooks(
-    List<dynamic> logbooks,
-  ) async {
+  static Future<void> cacheStudentLogbooks(List<dynamic> logbooks) async {
     final db = await database;
 
-    await db.transaction(
-      (txn) async {
-        await txn.delete(
-          'cached_student_logbooks',
-        );
+    await db.transaction((txn) async {
+      await txn.delete('cached_student_logbooks');
 
-        for (final rawLogbook in logbooks) {
-          if (rawLogbook is! Map) {
-            continue;
-          }
-
-          final logbook =
-              Map<String, dynamic>.from(
-            rawLogbook,
-          );
-
-          final id = int.tryParse(
-            logbook['id']?.toString() ?? '',
-          );
-
-          if (id == null) {
-            continue;
-          }
-
-          await txn.insert(
-            'cached_student_logbooks',
-            {
-              'id': id,
-              'data': jsonEncode(
-                logbook,
-              ),
-              'cached_at':
-                  DateTime.now()
-                      .toIso8601String(),
-            },
-            conflictAlgorithm:
-                ConflictAlgorithm.replace,
-          );
+      for (final rawLogbook in logbooks) {
+        if (rawLogbook is! Map) {
+          continue;
         }
-      },
-    );
+
+        final logbook = Map<String, dynamic>.from(rawLogbook);
+
+        final id = int.tryParse(logbook['id']?.toString() ?? '');
+
+        if (id == null) {
+          continue;
+        }
+
+        await txn.insert('cached_student_logbooks', {
+          'id': id,
+          'data': jsonEncode(logbook),
+          'cached_at': DateTime.now().toIso8601String(),
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
   }
 
-  static Future<List<dynamic>>
-      getCachedStudentLogbooks() async {
+  static Future<List<dynamic>> getCachedStudentLogbooks() async {
     final db = await database;
 
-    final rows = await db.query(
-      'cached_student_logbooks',
-      orderBy: 'id ASC',
-    );
+    final rows = await db.query('cached_student_logbooks', orderBy: 'id ASC');
 
     final List<dynamic> logbooks = [];
 
     for (final row in rows) {
-      final rawData =
-          row['data']?.toString();
+      final rawData = row['data']?.toString();
 
-      if (rawData == null ||
-          rawData.isEmpty) {
+      if (rawData == null || rawData.isEmpty) {
         continue;
       }
 
       try {
-        final decoded =
-            jsonDecode(rawData);
+        final decoded = jsonDecode(rawData);
 
         if (decoded is Map) {
-          logbooks.add(
-            Map<String, dynamic>.from(
-              decoded,
-            ),
-          );
+          logbooks.add(Map<String, dynamic>.from(decoded));
         }
       } catch (_) {
         // Ignore invalid cached record.
@@ -587,23 +456,14 @@ class LocalDatabaseService {
   }) async {
     final db = await database;
 
-    await db.insert(
-      'cached_logbook_details',
-      {
-        'logbook_id': logbookId,
-        'data': jsonEncode(
-          data,
-        ),
-        'cached_at':
-            DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm:
-          ConflictAlgorithm.replace,
-    );
+    await db.insert('cached_logbook_details', {
+      'logbook_id': logbookId,
+      'data': jsonEncode(data),
+      'cached_at': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  static Future<Map<String, dynamic>?>
-      getCachedLogbookDetails(
+  static Future<Map<String, dynamic>?> getCachedLogbookDetails(
     int logbookId,
   ) async {
     final db = await database;
@@ -611,9 +471,7 @@ class LocalDatabaseService {
     final rows = await db.query(
       'cached_logbook_details',
       where: 'logbook_id = ?',
-      whereArgs: [
-        logbookId,
-      ],
+      whereArgs: [logbookId],
       limit: 1,
     );
 
@@ -621,22 +479,17 @@ class LocalDatabaseService {
       return null;
     }
 
-    final rawData =
-        rows.first['data']?.toString();
+    final rawData = rows.first['data']?.toString();
 
-    if (rawData == null ||
-        rawData.isEmpty) {
+    if (rawData == null || rawData.isEmpty) {
       return null;
     }
 
     try {
-      final decoded =
-          jsonDecode(rawData);
+      final decoded = jsonDecode(rawData);
 
       if (decoded is Map) {
-        return Map<String, dynamic>.from(
-          decoded,
-        );
+        return Map<String, dynamic>.from(decoded);
       }
 
       return null;
@@ -655,97 +508,68 @@ class LocalDatabaseService {
   }) async {
     final db = await database;
 
-    final cachedAt =
-        DateTime.now().toIso8601String();
+    final cachedAt = DateTime.now().toIso8601String();
 
-    await db.transaction(
-      (txn) async {
-        /*
+    await db.transaction((txn) async {
+      /*
         Delete only the cached server records belonging
         to this logbook.
 
         This does NOT touch offline_attendance.
         */
-        await txn.delete(
-          'cached_attendance_records',
-          where: 'logbook_id = ?',
-          whereArgs: [
-            logbookId,
-          ],
-        );
+      await txn.delete(
+        'cached_attendance_records',
+        where: 'logbook_id = ?',
+        whereArgs: [logbookId],
+      );
 
-        for (final rawRecord in records) {
-          if (rawRecord is! Map) {
-            continue;
-          }
-
-          final record =
-              Map<String, dynamic>.from(
-            rawRecord,
-          );
-
-          final serverId =
-              int.tryParse(
-            record['id']?.toString() ?? '',
-          );
-
-          if (serverId == null) {
-            continue;
-          }
-
-          await txn.insert(
-            'cached_attendance_records',
-            {
-              'server_id': serverId,
-              'logbook_id': logbookId,
-              'data': jsonEncode(
-                record,
-              ),
-              'cached_at': cachedAt,
-            },
-            conflictAlgorithm:
-                ConflictAlgorithm.replace,
-          );
+      for (final rawRecord in records) {
+        if (rawRecord is! Map) {
+          continue;
         }
-      },
-    );
+
+        final record = Map<String, dynamic>.from(rawRecord);
+
+        final serverId = int.tryParse(record['id']?.toString() ?? '');
+
+        if (serverId == null) {
+          continue;
+        }
+
+        await txn.insert('cached_attendance_records', {
+          'server_id': serverId,
+          'logbook_id': logbookId,
+          'data': jsonEncode(record),
+          'cached_at': cachedAt,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
   }
 
-  static Future<List<dynamic>>
-      getCachedAttendanceRecords(
-    int logbookId,
-  ) async {
+  static Future<List<dynamic>> getCachedAttendanceRecords(int logbookId) async {
     final db = await database;
 
     final rows = await db.query(
       'cached_attendance_records',
       where: 'logbook_id = ?',
-      whereArgs: [
-        logbookId,
-      ],
+      whereArgs: [logbookId],
       orderBy: 'server_id DESC',
     );
 
     final List<dynamic> records = [];
 
     for (final row in rows) {
-      final rawData =
-          row['data']?.toString();
+      final rawData = row['data']?.toString();
 
-      if (rawData == null ||
-          rawData.isEmpty) {
+      if (rawData == null || rawData.isEmpty) {
         continue;
       }
 
       try {
-        final decoded =
-            jsonDecode(rawData);
+        final decoded = jsonDecode(rawData);
 
         if (decoded is Map) {
-          final record =
-              Map<String, dynamic>.from(
-            decoded,
-          );
+          final record = Map<String, dynamic>.from(decoded);
 
           /*
           This record came from the Laravel server,
@@ -774,97 +598,68 @@ class LocalDatabaseService {
   }) async {
     final db = await database;
 
-    final cachedAt =
-        DateTime.now().toIso8601String();
+    final cachedAt = DateTime.now().toIso8601String();
 
-    await db.transaction(
-      (txn) async {
-        /*
+    await db.transaction((txn) async {
+      /*
         Delete only server-cache records for
         this particular logbook.
 
         This does NOT touch offline_clinical_entries.
         */
-        await txn.delete(
-          'cached_clinical_entries',
-          where: 'logbook_id = ?',
-          whereArgs: [
-            logbookId,
-          ],
-        );
+      await txn.delete(
+        'cached_clinical_entries',
+        where: 'logbook_id = ?',
+        whereArgs: [logbookId],
+      );
 
-        for (final rawEntry in entries) {
-          if (rawEntry is! Map) {
-            continue;
-          }
-
-          final entry =
-              Map<String, dynamic>.from(
-            rawEntry,
-          );
-
-          final serverId =
-              int.tryParse(
-            entry['id']?.toString() ?? '',
-          );
-
-          if (serverId == null) {
-            continue;
-          }
-
-          await txn.insert(
-            'cached_clinical_entries',
-            {
-              'server_id': serverId,
-              'logbook_id': logbookId,
-              'data': jsonEncode(
-                entry,
-              ),
-              'cached_at': cachedAt,
-            },
-            conflictAlgorithm:
-                ConflictAlgorithm.replace,
-          );
+      for (final rawEntry in entries) {
+        if (rawEntry is! Map) {
+          continue;
         }
-      },
-    );
+
+        final entry = Map<String, dynamic>.from(rawEntry);
+
+        final serverId = int.tryParse(entry['id']?.toString() ?? '');
+
+        if (serverId == null) {
+          continue;
+        }
+
+        await txn.insert('cached_clinical_entries', {
+          'server_id': serverId,
+          'logbook_id': logbookId,
+          'data': jsonEncode(entry),
+          'cached_at': cachedAt,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
   }
 
-  static Future<List<dynamic>>
-      getCachedClinicalEntries(
-    int logbookId,
-  ) async {
+  static Future<List<dynamic>> getCachedClinicalEntries(int logbookId) async {
     final db = await database;
 
     final rows = await db.query(
       'cached_clinical_entries',
       where: 'logbook_id = ?',
-      whereArgs: [
-        logbookId,
-      ],
+      whereArgs: [logbookId],
       orderBy: 'server_id DESC',
     );
 
     final List<dynamic> entries = [];
 
     for (final row in rows) {
-      final rawData =
-          row['data']?.toString();
+      final rawData = row['data']?.toString();
 
-      if (rawData == null ||
-          rawData.isEmpty) {
+      if (rawData == null || rawData.isEmpty) {
         continue;
       }
 
       try {
-        final decoded =
-            jsonDecode(rawData);
+        final decoded = jsonDecode(rawData);
 
         if (decoded is Map) {
-          final entry =
-              Map<String, dynamic>.from(
-            decoded,
-          );
+          final entry = Map<String, dynamic>.from(decoded);
 
           /*
           Although this record is being read from
@@ -889,8 +684,7 @@ class LocalDatabaseService {
   // OPTIONAL CACHE HELPERS
   // ===========================================================================
 
-  static Future<void>
-      clearCachedAttendanceRecords({
+  static Future<void> clearCachedAttendanceRecords({
     required int logbookId,
   }) async {
     final db = await database;
@@ -898,14 +692,11 @@ class LocalDatabaseService {
     await db.delete(
       'cached_attendance_records',
       where: 'logbook_id = ?',
-      whereArgs: [
-        logbookId,
-      ],
+      whereArgs: [logbookId],
     );
   }
 
-  static Future<void>
-      clearCachedClinicalEntries({
+  static Future<void> clearCachedClinicalEntries({
     required int logbookId,
   }) async {
     final db = await database;
@@ -913,9 +704,7 @@ class LocalDatabaseService {
     await db.delete(
       'cached_clinical_entries',
       where: 'logbook_id = ?',
-      whereArgs: [
-        logbookId,
-      ],
+      whereArgs: [logbookId],
     );
   }
 
@@ -923,8 +712,7 @@ class LocalDatabaseService {
   // SYNC STATUS
   // ===========================================================================
 
-  static Future<int>
-      countPendingRecords() async {
+  static Future<int> countPendingRecords() async {
     final db = await database;
 
     /*
@@ -937,56 +725,37 @@ class LocalDatabaseService {
     cached_clinical_entries are deliberately excluded.
     */
 
-    final attendanceResult =
-        await db.rawQuery(
-      '''
+    final attendanceResult = await db.rawQuery('''
       SELECT COUNT(*) AS total
       FROM offline_attendance
       WHERE sync_status = 'PENDING_SYNC'
-      ''',
-    );
+      ''');
 
-    final clinicalResult =
-        await db.rawQuery(
-      '''
+    final clinicalResult = await db.rawQuery('''
       SELECT COUNT(*) AS total
       FROM offline_clinical_entries
       WHERE sync_status = 'PENDING_SYNC'
-      ''',
-    );
+      ''');
 
-    final attendanceCount =
-        _readCount(
-      attendanceResult,
-    );
+    final attendanceCount = _readCount(attendanceResult);
 
-    final clinicalCount =
-        _readCount(
-      clinicalResult,
-    );
+    final clinicalCount = _readCount(clinicalResult);
 
-    return attendanceCount +
-        clinicalCount;
+    return attendanceCount + clinicalCount;
   }
 
-  static int _readCount(
-    List<Map<String, Object?>> result,
-  ) {
+  static int _readCount(List<Map<String, Object?>> result) {
     if (result.isEmpty) {
       return 0;
     }
 
-    final value =
-        result.first['total'];
+    final value = result.first['total'];
 
     if (value is int) {
       return value;
     }
 
-    return int.tryParse(
-          value?.toString() ?? '0',
-        ) ??
-        0;
+    return int.tryParse(value?.toString() ?? '0') ?? 0;
   }
 
   // ===========================================================================

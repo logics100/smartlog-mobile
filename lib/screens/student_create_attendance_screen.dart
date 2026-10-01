@@ -3,33 +3,25 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/local_database_service.dart';
 
-class StudentCreateAttendanceScreen
-    extends StatefulWidget {
+class StudentCreateAttendanceScreen extends StatefulWidget {
   final int logbookId;
 
-  const StudentCreateAttendanceScreen({
-    super.key,
-    required this.logbookId,
-  });
+  const StudentCreateAttendanceScreen({super.key, required this.logbookId});
 
   @override
-  State<StudentCreateAttendanceScreen>
-      createState() =>
-          _StudentCreateAttendanceScreenState();
+  State<StudentCreateAttendanceScreen> createState() =>
+      _StudentCreateAttendanceScreenState();
 }
 
 class _StudentCreateAttendanceScreenState
     extends State<StudentCreateAttendanceScreen> {
   final formKey = GlobalKey<FormState>();
 
-  final facilityController =
-      TextEditingController();
+  final facilityController = TextEditingController();
 
-  final clinicalUnitController =
-      TextEditingController();
+  final clinicalUnitController = TextEditingController();
 
-  DateTime selectedDate =
-      DateTime.now();
+  DateTime selectedDate = DateTime.now();
 
   TimeOfDay? startTime;
   TimeOfDay? finishTime;
@@ -65,12 +57,7 @@ class _StudentCreateAttendanceScreenState
   Future<void> chooseStartTime() async {
     final result = await showTimePicker(
       context: context,
-      initialTime:
-          startTime ??
-              const TimeOfDay(
-                hour: 8,
-                minute: 0,
-              ),
+      initialTime: startTime ?? const TimeOfDay(hour: 8, minute: 0),
     );
 
     if (result != null) {
@@ -83,12 +70,7 @@ class _StudentCreateAttendanceScreenState
   Future<void> chooseFinishTime() async {
     final result = await showTimePicker(
       context: context,
-      initialTime:
-          finishTime ??
-              const TimeOfDay(
-                hour: 16,
-                minute: 0,
-              ),
+      initialTime: finishTime ?? const TimeOfDay(hour: 16, minute: 0),
     );
 
     if (result != null) {
@@ -98,146 +80,118 @@ class _StudentCreateAttendanceScreenState
     }
   }
 
-  
   Future<void> saveAttendance() async {
-  if (!formKey.currentState!.validate()) {
-    return;
-  }
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
 
-  if (startTime == null || finishTime == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Please select start and finish times.',
-        ),
-      ),
-    );
+    if (startTime == null || finishTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select start and finish times.')),
+      );
 
-    return;
-  }
+      return;
+    }
 
-  final startMinutes =
-      startTime!.hour * 60 + startTime!.minute;
+    final startMinutes = startTime!.hour * 60 + startTime!.minute;
 
-  final finishMinutes =
-      finishTime!.hour * 60 + finishTime!.minute;
+    final finishMinutes = finishTime!.hour * 60 + finishTime!.minute;
 
-  if (finishMinutes <= startMinutes) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Finish time must be after start time.',
-        ),
-      ),
-    );
+    if (finishMinutes <= startMinutes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Finish time must be after start time.')),
+      );
 
-    return;
-  }
+      return;
+    }
 
-  final attendanceDate =
-      formatDate(selectedDate);
+    final attendanceDate = formatDate(selectedDate);
 
-  final facilityName =
-      facilityController.text.trim();
+    final facilityName = facilityController.text.trim();
 
-  final clinicalUnit =
-      clinicalUnitController.text.trim();
+    final clinicalUnit = clinicalUnitController.text.trim();
 
-  final formattedStartTime =
-      formatTime(startTime!);
+    final formattedStartTime = formatTime(startTime!);
 
-  final formattedFinishTime =
-      formatTime(finishTime!);
+    final formattedFinishTime = formatTime(finishTime!);
 
-  final totalHours =
-      (finishMinutes - startMinutes) / 60.0;
+    final totalHours = (finishMinutes - startMinutes) / 60.0;
 
-  setState(() {
-    saving = true;
-  });
+    setState(() {
+      saving = true;
+    });
 
-  try {
-    // ---------------------------------------------------------
-    // FIRST TRY TO SAVE DIRECTLY TO LARAVEL
-    // ---------------------------------------------------------
-    final result =
-        await ApiService.createStudentAttendance(
-      logbookId: widget.logbookId,
-      attendanceDate: attendanceDate,
-      facilityName: facilityName,
-      clinicalUnit: clinicalUnit,
-      startTime: formattedStartTime,
-      finishTime: formattedFinishTime,
-    );
-
-    if (!mounted) return;
-
-    final message =
-        result['message']?.toString() ??
-            'Attendance recorded successfully.';
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
-
-    Navigator.pop(
-      context,
-      true,
-    );
-  } catch (e) {
-    // ---------------------------------------------------------
-    // LARAVEL / NETWORK FAILED
-    // SAVE LOCALLY IN SQLITE INSTEAD
-    // ---------------------------------------------------------
     try {
-      await LocalDatabaseService.saveOfflineAttendance(
+      // ---------------------------------------------------------
+      // FIRST TRY TO SAVE DIRECTLY TO LARAVEL
+      // ---------------------------------------------------------
+      final result = await ApiService.createStudentAttendance(
         logbookId: widget.logbookId,
         attendanceDate: attendanceDate,
         facilityName: facilityName,
         clinicalUnit: clinicalUnit,
         startTime: formattedStartTime,
         finishTime: formattedFinishTime,
-        totalHours: totalHours,
       );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No connection to SmartLog server. '
-            'Attendance saved offline and will '
-            'be synced later.',
-          ),
-        ),
-      );
+      final message =
+          result['message']?.toString() ?? 'Attendance recorded successfully.';
 
-      Navigator.pop(
-        context,
-        true,
-      );
-    } catch (localError) {
-      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to save attendance: '
-            '$localError',
+      Navigator.pop(context, true);
+    } catch (e) {
+      // ---------------------------------------------------------
+      // LARAVEL / NETWORK FAILED
+      // SAVE LOCALLY IN SQLITE INSTEAD
+      // ---------------------------------------------------------
+      try {
+        await LocalDatabaseService.saveOfflineAttendance(
+          logbookId: widget.logbookId,
+          attendanceDate: attendanceDate,
+          facilityName: facilityName,
+          clinicalUnit: clinicalUnit,
+          startTime: formattedStartTime,
+          finishTime: formattedFinishTime,
+          totalHours: totalHours,
+        );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No connection to SmartLog server. '
+              'Attendance saved offline and will '
+              'be synced later.',
+            ),
           ),
-        ),
-      );
-    }
-  } finally {
-    if (mounted) {
-      setState(() {
-        saving = false;
-      });
+        );
+
+        Navigator.pop(context, true);
+      } catch (localError) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Unable to save attendance: '
+              '$localError',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          saving = false;
+        });
+      }
     }
   }
-}
 
   @override
   void dispose() {
@@ -249,73 +203,42 @@ class _StudentCreateAttendanceScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Add Attendance',
-        ),
-      ),
+      appBar: AppBar(title: const Text('Add Attendance')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Form(
             key: formKey,
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Clinical Placement Attendance',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 24),
 
                 ListTile(
-                  contentPadding:
-                      EdgeInsets.zero,
-                  leading:
-                      const Icon(
-                    Icons.calendar_today,
-                  ),
-                  title:
-                      const Text('Date'),
-                  subtitle: Text(
-                    formatDate(
-                      selectedDate,
-                    ),
-                  ),
-                  trailing:
-                      const Icon(
-                    Icons.edit_calendar,
-                  ),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today),
+                  title: const Text('Date'),
+                  subtitle: Text(formatDate(selectedDate)),
+                  trailing: const Icon(Icons.edit_calendar),
                   onTap: chooseDate,
                 ),
 
                 const SizedBox(height: 12),
 
                 TextFormField(
-                  controller:
-                      facilityController,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Facility Name',
-                    border:
-                        OutlineInputBorder(),
-                    prefixIcon: Icon(
-                      Icons.local_hospital,
-                    ),
+                  controller: facilityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Facility Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.local_hospital),
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value
-                            .trim()
-                            .isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Enter the facility name.';
                     }
 
@@ -326,23 +249,14 @@ class _StudentCreateAttendanceScreenState
                 const SizedBox(height: 16),
 
                 TextFormField(
-                  controller:
-                      clinicalUnitController,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Clinical Unit / Ward',
-                    border:
-                        OutlineInputBorder(),
-                    prefixIcon: Icon(
-                      Icons.medical_services,
-                    ),
+                  controller: clinicalUnitController,
+                  decoration: const InputDecoration(
+                    labelText: 'Clinical Unit / Ward',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.medical_services),
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value
-                            .trim()
-                            .isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Enter the clinical unit.';
                     }
 
@@ -354,23 +268,14 @@ class _StudentCreateAttendanceScreenState
 
                 Card(
                   child: ListTile(
-                    leading:
-                        const Icon(
-                      Icons.login,
-                    ),
-                    title:
-                        const Text(
-                      'Start Time',
-                    ),
+                    leading: const Icon(Icons.login),
+                    title: const Text('Start Time'),
                     subtitle: Text(
                       startTime == null
                           ? 'Select start time'
-                          : formatTime(
-                              startTime!,
-                            ),
+                          : formatTime(startTime!),
                     ),
-                    onTap:
-                        chooseStartTime,
+                    onTap: chooseStartTime,
                   ),
                 ),
 
@@ -378,56 +283,32 @@ class _StudentCreateAttendanceScreenState
 
                 Card(
                   child: ListTile(
-                    leading:
-                        const Icon(
-                      Icons.logout,
-                    ),
-                    title:
-                        const Text(
-                      'Finish Time',
-                    ),
+                    leading: const Icon(Icons.logout),
+                    title: const Text('Finish Time'),
                     subtitle: Text(
                       finishTime == null
                           ? 'Select finish time'
-                          : formatTime(
-                              finishTime!,
-                            ),
+                          : formatTime(finishTime!),
                     ),
-                    onTap:
-                        chooseFinishTime,
+                    onTap: chooseFinishTime,
                   ),
                 ),
 
                 const SizedBox(height: 30),
 
                 SizedBox(
-                  width:
-                      double.infinity,
+                  width: double.infinity,
                   height: 52,
-                  child:
-                      ElevatedButton.icon(
-                    onPressed:
-                        saving
-                            ? null
-                            : saveAttendance,
+                  child: ElevatedButton.icon(
+                    onPressed: saving ? null : saveAttendance,
                     icon: saving
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child:
-                                CircularProgressIndicator(
-                              strokeWidth:
-                                  2,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(
-                            Icons.save,
-                          ),
-                    label: Text(
-                      saving
-                          ? 'Saving...'
-                          : 'Save Attendance',
-                    ),
+                        : const Icon(Icons.save),
+                    label: Text(saving ? 'Saving...' : 'Save Attendance'),
                   ),
                 ),
               ],

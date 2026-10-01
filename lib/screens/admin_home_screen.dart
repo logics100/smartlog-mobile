@@ -1,25 +1,25 @@
+import 'admin_appearance_screen.dart';
+
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'admin_users_screen.dart';
 import 'admin_departments_screen.dart';
 import 'admin_units_screen.dart';
+import 'admin_enrollments_screen.dart';
+import '../widgets/admin_ui.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   final Map<String, dynamic> user;
 
-  const AdminHomeScreen({
-    super.key,
-    required this.user,
-  });
+  const AdminHomeScreen({super.key, required this.user});
 
   @override
-  State<AdminHomeScreen> createState() =>
-      _AdminHomeScreenState();
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
 }
 
-class _AdminHomeScreenState
-    extends State<AdminHomeScreen> {
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
   bool loading = true;
   String? errorMessage;
 
@@ -38,8 +38,7 @@ class _AdminHomeScreenState
     });
 
     try {
-      final result =
-          await ApiService.getAdminDashboard();
+      final result = await ApiService.getAdminDashboard();
 
       if (!mounted) return;
 
@@ -50,8 +49,7 @@ class _AdminHomeScreenState
       if (!mounted) return;
 
       setState(() {
-        errorMessage =
-            'Unable to load ICT Admin dashboard.';
+        errorMessage = 'Unable to load ICT Admin dashboard.';
       });
     } finally {
       if (mounted) {
@@ -71,10 +69,7 @@ class _AdminHomeScreenState
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const LoginScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
       (_) => false,
     );
   }
@@ -82,10 +77,7 @@ class _AdminHomeScreenState
   Future<void> openUserManagement() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const AdminUsersScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
     );
 
     if (mounted) {
@@ -93,106 +85,147 @@ class _AdminHomeScreenState
     }
   }
 
-  Future<void>
-      openDepartmentManagement() async {
+  Future<void> openDepartmentManagement() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const AdminDepartmentsScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AdminDepartmentsScreen()),
     );
 
     if (mounted) {
       await loadDashboard();
     }
   }
-    Future<void> openUnitManagement() async {
+
+  Future<void> openEnrollmentMonitoring() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const AdminUnitsScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AdminEnrollmentsScreen()),
+    );
+  }
+
+  Future<void> openUnitManagement() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminUnitsScreen()),
     );
 
     if (mounted) {
       await loadDashboard();
     }
+  }
+
+  final GlobalKey overviewKey = GlobalKey();
+
+  Future<void> openOverview() async {
+    final target = overviewKey.currentContext;
+    if (target != null) {
+      await Scrollable.ensureVisible(
+        target,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void openAppearanceWeb() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminAppearanceScreen()),
+    );
+  }
+
+  Widget _portalTile(
+    IconData icon,
+    String title,
+    String description,
+    VoidCallback action,
+  ) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: action,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE7F4FE),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AdminUi.royalBlue, size: 25),
+              ),
+              const SizedBox(height: 9),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AdminUi.navy,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11.5, color: AdminUi.muted),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'ICT Admin Dashboard',
+    return Theme(
+      data: AdminUi.theme(context),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('ICT Admin Dashboard'),
+          actions: [
+            IconButton(
+              tooltip: 'Refresh',
+              onPressed: loading ? null : loadDashboard,
+              icon: const Icon(Icons.refresh),
+            ),
+            IconButton(
+              tooltip: 'Logout',
+              onPressed: logout,
+              icon: const Icon(Icons.logout),
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed:
-                loading
-                    ? null
-                    : loadDashboard,
-            icon: const Icon(
-              Icons.refresh,
-            ),
-          ),
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: logout,
-            icon: const Icon(
-              Icons.logout,
-            ),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: loadDashboard,
-        child: loading
-            ? const Center(
-                child:
-                    CircularProgressIndicator(),
-              )
-            : errorMessage != null
-                ? ListView(
-                    padding:
-                        const EdgeInsets.all(
-                      24,
+        body: RefreshIndicator(
+          onRefresh: loadDashboard,
+          child: loading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+              ? ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    const SizedBox(height: 80),
+                    const Icon(Icons.error_outline, size: 60),
+                    const SizedBox(height: 16),
+                    Text(errorMessage!, textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: loadDashboard,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try Again'),
                     ),
-                    children: [
-                      const SizedBox(
-                        height: 80,
-                      ),
-                      const Icon(
-                        Icons.error_outline,
-                        size: 60,
-                      ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      Text(
-                        errorMessage!,
-                        textAlign:
-                            TextAlign.center,
-                      ),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      ElevatedButton.icon(
-                        onPressed:
-                            loadDashboard,
-                        icon: const Icon(
-                          Icons.refresh,
-                        ),
-                        label: const Text(
-                          'Try Again',
-                        ),
-                      ),
-                    ],
-                  )
-                : buildDashboard(),
+                  ],
+                )
+              : buildDashboard(),
+        ),
       ),
     );
   }
@@ -200,116 +233,67 @@ class _AdminHomeScreenState
   Widget buildDashboard() {
     final data = dashboard ?? {};
 
-    final admin =
-        Map<String, dynamic>.from(
-      data['admin'] ?? {},
-    );
+    final admin = Map<String, dynamic>.from(data['admin'] ?? {});
 
-    final summary =
-        Map<String, dynamic>.from(
-      data['summary'] ?? {},
-    );
+    final summary = Map<String, dynamic>.from(data['summary'] ?? {});
 
-    final users =
-        Map<String, dynamic>.from(
-      data['users'] ?? {},
-    );
+    final users = Map<String, dynamic>.from(data['users'] ?? {});
 
-    final units =
-        Map<String, dynamic>.from(
-      data['units'] ?? {},
-    );
+    final units = Map<String, dynamic>.from(data['units'] ?? {});
 
-    final enrollments =
-        Map<String, dynamic>.from(
-      data['enrollments'] ?? {},
-    );
+    final enrollments = Map<String, dynamic>.from(data['enrollments'] ?? {});
 
-    final logbooks =
-        Map<String, dynamic>.from(
-      data['logbooks'] ?? {},
-    );
+    final logbooks = Map<String, dynamic>.from(data['logbooks'] ?? {});
 
-    final clinicalEntries =
-        Map<String, dynamic>.from(
+    final clinicalEntries = Map<String, dynamic>.from(
       data['clinical_entries'] ?? {},
     );
 
-    final departments =
-        Map<String, dynamic>.from(
-      data['departments'] ?? {},
-    );
+    final departments = Map<String, dynamic>.from(data['departments'] ?? {});
 
-    final departmentItems =
-        List<dynamic>.from(
-      departments['items'] ?? [],
-    );
+    final departmentItems = List<dynamic>.from(departments['items'] ?? []);
 
     return ListView(
-      padding:
-          const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       children: [
         Card(
           child: Padding(
-            padding:
-                const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const CircleAvatar(
                   radius: 28,
-                  child: Icon(
-                    Icons
-                        .admin_panel_settings,
-                    size: 30,
-                  ),
+                  child: Icon(Icons.admin_panel_settings, size: 30),
                 ),
 
-                const SizedBox(
-                  width: 14,
-                ),
+                const SizedBox(width: 14),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Welcome, '
                         '${admin['name'] ?? widget.user['name'] ?? 'ICT Admin'}',
-                        style:
-                            const TextStyle(
+                        style: const TextStyle(
                           fontSize: 22,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 8,
-                      ),
+                      const SizedBox(height: 8),
 
-                      Text(
-                        admin['email'] ??
-                            widget.user[
-                                'email'] ??
-                            '',
-                      ),
+                      Text(admin['email'] ?? widget.user['email'] ?? ''),
 
-                      const SizedBox(
-                        height: 4,
-                      ),
+                      const SizedBox(height: 4),
 
                       Text(
                         'DWU ID: '
                         '${admin['dwu_id'] ?? widget.user['dwu_id'] ?? '-'}',
                       ),
 
-                      const SizedBox(
-                        height: 4,
-                      ),
+                      const SizedBox(height: 4),
 
                       Text(
                         'Role: '
@@ -323,216 +307,157 @@ class _AdminHomeScreenState
           ),
         ),
 
-        const SizedBox(
-          height: 16,
-        ),
+        const SizedBox(height: 16),
 
         const Text(
-          'Quick Access',
+          'ICT ADMIN PORTAL',
           style: TextStyle(
-            fontSize: 20,
-            fontWeight:
-                FontWeight.bold,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: AdminUi.royalBlue,
+            letterSpacing: 1.2,
           ),
         ),
-
-        const SizedBox(
-          height: 12,
-        ),
-
-        Card(
-          child: ListTile(
-            leading:
-                const CircleAvatar(
-              child: Icon(
-                Icons.manage_accounts,
-              ),
-            ),
-            title: const Text(
-              'User Management',
-              style: TextStyle(
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-            subtitle: const Text(
-              'View, search, filter and create SmartLog user accounts',
-            ),
-            trailing: const Icon(
-              Icons.chevron_right,
-            ),
-            onTap: openUserManagement,
-          ),
-        ),
-
-        const SizedBox(
-          height: 12,
-        ),
-
-        Card(
-          child: ListTile(
-            leading:
-                const CircleAvatar(
-              child: Icon(
-                Icons.business,
-              ),
-            ),
-            title: const Text(
-              'Department Management',
-              style: TextStyle(
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-            subtitle: const Text(
-              'View, create, edit and manage SmartLog departments',
-            ),
-            trailing: const Icon(
-              Icons.chevron_right,
-            ),
-            onTap:
-                openDepartmentManagement,
-          ),
-        ),
-              const SizedBox(
-          height: 12,
-        ),
-
-        Card(
-          child: ListTile(
-            leading:
-                const CircleAvatar(
-              child: Icon(
-                Icons.menu_book,
-              ),
-            ),
-            title: const Text(
-              'Unit Management',
-              style: TextStyle(
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-            subtitle: const Text(
-              'View, create, edit and manage SmartLog units',
-            ),
-            trailing: const Icon(
-              Icons.chevron_right,
-            ),
-            onTap:
-                openUnitManagement,
-          ),
-        ),
-
-        const SizedBox(
-          height: 24,
-        ),
-
+        const SizedBox(height: 10),
         const Text(
+          'Navigation',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return GridView.count(
+              crossAxisCount: constraints.maxWidth >= 600 ? 3 : 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              mainAxisExtent: constraints.maxWidth >= 600 ? 160 : 180,
+              children: [
+                _portalTile(
+                  Icons.dashboard_rounded,
+                  'Dashboard',
+                  'Refresh overview',
+                  loadDashboard,
+                ),
+                _portalTile(
+                  Icons.manage_accounts_rounded,
+                  'User Management',
+                  'Accounts and access',
+                  openUserManagement,
+                ),
+                _portalTile(
+                  Icons.apartment_rounded,
+                  'Departments',
+                  'Manage departments',
+                  openDepartmentManagement,
+                ),
+                _portalTile(
+                  Icons.menu_book_rounded,
+                  'Units',
+                  'Manage clinical units',
+                  openUnitManagement,
+                ),
+                _portalTile(
+                  Icons.school_outlined,
+                  'Enrollments',
+                  'Monitor student enrollment',
+                  openEnrollmentMonitoring,
+                ),
+                _portalTile(
+                  Icons.palette_rounded,
+                  'Appearance & Images',
+                  'Open web settings',
+                  openAppearanceWeb,
+                ),
+                _portalTile(
+                  Icons.insights_rounded,
+                  'System Overview',
+                  'View activity below',
+                  openOverview,
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        Text(
           'System Overview',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight:
-                FontWeight.bold,
-          ),
+          key: overviewKey,
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
-        const SizedBox(
-          height: 12,
-        ),
+        const SizedBox(height: 12),
 
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
-          physics:
-              const NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 1.15,
           children: [
             buildSummaryCard(
               title: 'Departments',
-              value:
-                  '${summary['departments'] ?? 0}',
+              value: '${summary['departments'] ?? 0}',
               icon: Icons.business,
-              onTap:
-                  openDepartmentManagement,
+              onTap: openDepartmentManagement,
             ),
 
             buildSummaryCard(
               title: 'Users',
-              value:
-                  '${summary['users'] ?? 0}',
+              value: '${summary['users'] ?? 0}',
               icon: Icons.people,
-              onTap:
-                  openUserManagement,
+              onTap: openUserManagement,
             ),
 
             buildSummaryCard(
               title: 'Students',
-              value:
-                  '${summary['students'] ?? 0}',
+              value: '${summary['students'] ?? 0}',
               icon: Icons.school,
             ),
 
             buildSummaryCard(
               title: 'Lecturers',
-              value:
-                  '${summary['lecturers'] ?? 0}',
-              icon:
-                  Icons.person_outline,
+              value: '${summary['lecturers'] ?? 0}',
+              icon: Icons.person_outline,
             ),
 
             buildSummaryCard(
               title: 'HODs',
-              value:
-                  '${summary['hods'] ?? 0}',
-              icon: Icons
-                  .admin_panel_settings,
+              value: '${summary['hods'] ?? 0}',
+              icon: Icons.admin_panel_settings,
             ),
 
-                        buildSummaryCard(
+            buildSummaryCard(
               title: 'Units',
-              value:
-                  '${summary['units'] ?? 0}',
+              value: '${summary['units'] ?? 0}',
               icon: Icons.menu_book,
-              onTap:
-                  openUnitManagement,
+              onTap: openUnitManagement,
             ),
 
             buildSummaryCard(
               title: 'Enrollments',
-              value:
-                  '${summary['enrollments'] ?? 0}',
-              icon: Icons
-                  .assignment_ind,
+              value: '${summary['enrollments'] ?? 0}',
+              icon: Icons.assignment_ind,
             ),
 
             buildSummaryCard(
               title: 'ICT Admins',
-              value:
-                  '${summary['ict_admins'] ?? 0}',
+              value: '${summary['ict_admins'] ?? 0}',
               icon: Icons.settings,
             ),
           ],
         ),
 
-        const SizedBox(
-          height: 24,
-        ),
+        const SizedBox(height: 24),
 
         const Text(
           'User Accounts',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight:
-                FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
-        const SizedBox(
-          height: 12,
-        ),
+        const SizedBox(height: 12),
 
         Card(
           child: Column(
@@ -540,71 +465,45 @@ class _AdminHomeScreenState
               buildInfoRow(
                 'Total Users',
                 users['total'],
-                onTap:
-                    openUserManagement,
+                onTap: openUserManagement,
               ),
 
               buildInfoRow(
                 'Active Users',
                 users['active'],
-                onTap:
-                    openUserManagement,
+                onTap: openUserManagement,
               ),
 
               buildInfoRow(
                 'Inactive Users',
                 users['inactive'],
-                onTap:
-                    openUserManagement,
+                onTap: openUserManagement,
               ),
             ],
           ),
         ),
 
-        const SizedBox(
-          height: 24,
-        ),
+        const SizedBox(height: 24),
 
         const Text(
           'Logbook Activity',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight:
-                FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
-        const SizedBox(
-          height: 12,
-        ),
+        const SizedBox(height: 12),
 
         Card(
           child: Column(
             children: [
-              buildInfoRow(
-                'Total Logbooks',
-                logbooks['total'],
-              ),
+              buildInfoRow('Total Logbooks', logbooks['total']),
 
-              buildInfoRow(
-                'Active',
-                logbooks['active'],
-              ),
+              buildInfoRow('Active', logbooks['active']),
 
-              buildInfoRow(
-                'Completed',
-                logbooks['completed'],
-              ),
+              buildInfoRow('Completed', logbooks['completed']),
 
-              buildInfoRow(
-                'Submitted',
-                logbooks['submitted'],
-              ),
+              buildInfoRow('Submitted', logbooks['submitted']),
 
-              buildInfoRow(
-                'Archived',
-                logbooks['archived'],
-              ),
+              buildInfoRow('Archived', logbooks['archived']),
 
               buildInfoRow(
                 'Average Completion',
@@ -613,255 +512,163 @@ class _AdminHomeScreenState
             ],
           ),
         ),
-                const SizedBox(
-          height: 24,
-        ),
+        const SizedBox(height: 24),
 
         const Text(
           'Clinical Entries',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight:
-                FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
-        const SizedBox(
-          height: 12,
-        ),
+        const SizedBox(height: 12),
 
         Card(
           child: Column(
             children: [
-              buildInfoRow(
-                'Total Entries',
-                clinicalEntries['total'],
-              ),
+              buildInfoRow('Total Entries', clinicalEntries['total']),
 
-              buildInfoRow(
-                'Draft',
-                clinicalEntries['draft'],
-              ),
+              buildInfoRow('Draft', clinicalEntries['draft']),
 
               buildInfoRow(
                 'Pending Verification',
-                clinicalEntries[
-                    'pending_verification'],
+                clinicalEntries['pending_verification'],
               ),
 
-              buildInfoRow(
-                'Verified',
-                clinicalEntries[
-                    'verified'],
-              ),
+              buildInfoRow('Verified', clinicalEntries['verified']),
 
-              buildInfoRow(
-                'Rejected',
-                clinicalEntries[
-                    'rejected'],
-              ),
+              buildInfoRow('Rejected', clinicalEntries['rejected']),
             ],
           ),
         ),
 
-        const SizedBox(
-          height: 24,
-        ),
+        const SizedBox(height: 24),
 
         const Text(
           'System Setup',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight:
-                FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
-        const SizedBox(
-          height: 12,
-        ),
+        const SizedBox(height: 12),
 
         Card(
           child: Column(
             children: [
-                            buildInfoRow(
+              buildInfoRow(
                 'Active Units',
                 units['active'],
-                onTap:
-                    openUnitManagement,
+                onTap: openUnitManagement,
               ),
 
               buildInfoRow(
                 'Logbook Units',
-                units[
-                    'requiring_logbook'],
-                onTap:
-                    openUnitManagement,
+                units['requiring_logbook'],
+                onTap: openUnitManagement,
               ),
 
-              buildInfoRow(
-                'Enrollments',
-                enrollments['total'],
-              ),
+              buildInfoRow('Enrollments', enrollments['total']),
             ],
           ),
         ),
 
-        const SizedBox(
-          height: 24,
-        ),
+        const SizedBox(height: 24),
 
         Row(
           children: [
             const Expanded(
               child: Text(
                 'Departments',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight:
-                      FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
 
             TextButton.icon(
-              onPressed:
-                  openDepartmentManagement,
-              icon: const Icon(
-                Icons.open_in_new,
-                size: 18,
-              ),
-              label: const Text(
-                'Manage',
-              ),
+              onPressed: openDepartmentManagement,
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: const Text('Manage'),
             ),
           ],
         ),
 
-        const SizedBox(
-          height: 12,
-        ),
+        const SizedBox(height: 12),
 
-        ...departmentItems.map(
-          (item) {
-            final department =
-                Map<String, dynamic>.from(
-              item,
-            );
+        ...departmentItems.map((item) {
+          final department = Map<String, dynamic>.from(item);
 
-            final statistics =
-                Map<String, dynamic>.from(
-              department[
-                      'statistics'] ??
-                  {},
-            );
+          final statistics = Map<String, dynamic>.from(
+            department['statistics'] ?? {},
+          );
 
-            return Card(
-              margin:
-                  const EdgeInsets.only(
-                bottom: 12,
-              ),
-              child: InkWell(
-                onTap:
-                    openDepartmentManagement,
-                borderRadius:
-                    BorderRadius.circular(
-                  12,
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.all(
-                    16,
-                  ),
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              department[
-                                      'department_name'] ??
-                                  'Department',
-                              style:
-                                  const TextStyle(
-                                fontSize:
-                                    18,
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
-                              ),
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: InkWell(
+              onTap: openDepartmentManagement,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            department['department_name'] ?? 'Department',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
+                        ),
 
-                          const Icon(
-                            Icons
-                                .chevron_right,
-                          ),
-                        ],
-                      ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
 
-                      const SizedBox(
-                        height: 4,
-                      ),
+                    const SizedBox(height: 4),
 
-                      Text(
-                        'Code: '
-                        '${department['department_code'] ?? '-'}',
-                      ),
+                    Text(
+                      'Code: '
+                      '${department['department_code'] ?? '-'}',
+                    ),
 
-                      const Divider(
-                        height: 24,
-                      ),
+                    const Divider(height: 24),
 
-                      Text(
-                        'Students: '
-                        '${statistics['students'] ?? 0}',
-                      ),
+                    Text(
+                      'Students: '
+                      '${statistics['students'] ?? 0}',
+                    ),
 
-                      Text(
-                        'Lecturers: '
-                        '${statistics['lecturers'] ?? 0}',
-                      ),
+                    Text(
+                      'Lecturers: '
+                      '${statistics['lecturers'] ?? 0}',
+                    ),
 
-                      Text(
-                        'HODs: '
-                        '${statistics['hods'] ?? 0}',
-                      ),
+                    Text(
+                      'HODs: '
+                      '${statistics['hods'] ?? 0}',
+                    ),
 
-                      Text(
-                        'Units: '
-                        '${statistics['units'] ?? 0}',
-                      ),
-                    ],
-                  ),
+                    Text(
+                      'Units: '
+                      '${statistics['units'] ?? 0}',
+                    ),
+                  ],
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
 
-        const SizedBox(
-          height: 20,
-        ),
+        const SizedBox(height: 20),
 
         Card(
           child: Padding(
-            padding:
-                const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.info_outline,
-                ),
+                const Icon(Icons.info_outline),
 
-                const SizedBox(
-                  width: 12,
-                ),
+                const SizedBox(width: 12),
 
                 Expanded(
                   child: Text(
@@ -875,9 +682,7 @@ class _AdminHomeScreenState
           ),
         ),
 
-        const SizedBox(
-          height: 30,
-        ),
+        const SizedBox(height: 30),
       ],
     );
   }
@@ -891,43 +696,27 @@ class _AdminHomeScreenState
     return Card(
       child: InkWell(
         onTap: onTap,
-        borderRadius:
-            BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding:
-              const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12),
           child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 30,
-              ),
+              Icon(icon, size: 30),
 
-              const SizedBox(
-                height: 8,
-              ),
+              const SizedBox(height: 8),
 
               Text(
                 value,
-                style:
-                    const TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(
-                height: 4,
-              ),
+              const SizedBox(height: 4),
 
-              Text(
-                title,
-                textAlign:
-                    TextAlign.center,
-              ),
+              Text(title, textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -935,38 +724,22 @@ class _AdminHomeScreenState
     );
   }
 
-  Widget buildInfoRow(
-    String label,
-    dynamic value, {
-    VoidCallback? onTap,
-  }) {
+  Widget buildInfoRow(String label, dynamic value, {VoidCallback? onTap}) {
     return ListTile(
       dense: true,
-      title: Text(
-        label,
-      ),
+      title: Text(label),
       trailing: Row(
-        mainAxisSize:
-            MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             '${value ?? 0}',
-            style:
-                const TextStyle(
-              fontWeight:
-                  FontWeight.bold,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
 
           if (onTap != null) ...[
-            const SizedBox(
-              width: 6,
-            ),
+            const SizedBox(width: 6),
 
-            const Icon(
-              Icons.chevron_right,
-              size: 20,
-            ),
+            const Icon(Icons.chevron_right, size: 20),
           ],
         ],
       ),

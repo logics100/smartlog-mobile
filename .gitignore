@@ -46,3 +46,44 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# =========================================================
+# SmartLog local/private development files
+# =========================================================
+
+# Local databases - NEVER upload
+*.db
+*.sqlite
+*.sqlite3
+
+# Local backup files/folders
+/backups/
+*backup*
+*BACKUP*
+*.before_*
+*.before-*
+*BEFORE*
+
+# SmartLog local working notes
+HOD_MOBILE_CURRENT.txt
+SMARTLOG-BUILDER-SMALL.txt
+smartlog-clinical-builder-current.txt
+smartlog-mobile-ui-current.txt
+
+# Local diagnostic scripts
+check_db.py
+
+# Environment/secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+
+
+# Android signing secrets
+*.jks
+*.keystore
+/android/key.properties
+key.properties

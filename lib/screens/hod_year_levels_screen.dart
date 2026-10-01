@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 
 class HodYearLevelsScreen extends StatefulWidget {
   const HodYearLevelsScreen({super.key});
 
   @override
-  State<HodYearLevelsScreen> createState() =>
-      _HodYearLevelsScreenState();
+  State<HodYearLevelsScreen> createState() => _HodYearLevelsScreenState();
 }
 
-class _HodYearLevelsScreenState
-    extends State<HodYearLevelsScreen> {
+class _HodYearLevelsScreenState extends State<HodYearLevelsScreen> {
   bool loading = true;
   String? errorMessage;
 
@@ -40,8 +39,7 @@ class _HodYearLevelsScreenState
       if (!mounted) return;
 
       setState(() {
-        errorMessage =
-            'Unable to load department year levels.';
+        errorMessage = 'Unable to load department year levels.';
       });
     } finally {
       if (mounted) {
@@ -55,7 +53,18 @@ class _HodYearLevelsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FD),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF062B63),
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
         title: const Text('Year Level Progress'),
         actions: [
           IconButton(
@@ -66,12 +75,10 @@ class _HodYearLevelsScreenState
         ],
       ),
       body: loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : errorMessage != null
-              ? buildErrorState()
-              : buildYearLevelList(),
+          ? buildErrorState()
+          : buildYearLevelList(),
     );
   }
 
@@ -82,15 +89,9 @@ class _HodYearLevelsScreenState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 52,
-            ),
+            const Icon(Icons.error_outline, size: 52),
             const SizedBox(height: 16),
-            Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-            ),
+            Text(errorMessage!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: loadYearLevels,
@@ -122,10 +123,7 @@ class _HodYearLevelsScreenState
                 ),
               ),
               const Chip(
-                avatar: Icon(
-                  Icons.visibility_outlined,
-                  size: 17,
-                ),
+                avatar: Icon(Icons.visibility_outlined, size: 17),
                 label: Text('Read Only'),
               ),
             ],
@@ -135,14 +133,18 @@ class _HodYearLevelsScreenState
 
           if (yearLevels.isEmpty)
             const Card(
+              color: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                side: BorderSide(color: Color(0xFFDBE7F2)),
+              ),
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.school_outlined,
-                      size: 48,
-                    ),
+                    Icon(Icons.school_outlined, size: 48),
                     SizedBox(height: 12),
                     Text(
                       'No year-level information found.',
@@ -154,10 +156,7 @@ class _HodYearLevelsScreenState
             )
           else
             ...yearLevels.map((item) {
-              final year =
-                  Map<String, dynamic>.from(
-                item as Map,
-              );
+              final year = Map<String, dynamic>.from(item as Map);
 
               return buildYearLevelCard(year);
             }),
@@ -166,36 +165,31 @@ class _HodYearLevelsScreenState
     );
   }
 
-  Widget buildYearLevelCard(
-    Map<String, dynamic> year,
-  ) {
-    final yearName =
-        year['year_name']?.toString() ??
-            'Year Level';
+  Widget buildYearLevelCard(Map<String, dynamic> year) {
+    final yearName = year['year_name']?.toString() ?? 'Year Level';
 
-    final studentCount =
-        year['student_count'] ?? 0;
+    final studentCount = year['student_count'] ?? 0;
 
-    final unitCount =
-        year['unit_count'] ?? 0;
+    final unitCount = year['unit_count'] ?? 0;
 
-    final totalLogbooks =
-        year['total_logbooks'] ?? 0;
+    final totalLogbooks = year['total_logbooks'] ?? 0;
 
-    final completedLogbooks =
-        year['completed_logbooks'] ?? 0;
+    final completedLogbooks = year['completed_logbooks'] ?? 0;
 
-    final activeLogbooks =
-        year['active_logbooks'] ?? 0;
+    final activeLogbooks = year['active_logbooks'] ?? 0;
 
-    final averageCompletion = toDouble(
-      year['average_completion_percentage'],
-    );
+    final averageCompletion = toDouble(year['average_completion_percentage']);
 
-    final progress =
-        (averageCompletion / 100).clamp(0.0, 1.0);
+    final progress = (averageCompletion / 100).clamp(0.0, 1.0);
 
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
+      ),
       margin: const EdgeInsets.only(bottom: 14),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -204,11 +198,7 @@ class _HodYearLevelsScreenState
           children: [
             Row(
               children: [
-                const CircleAvatar(
-                  child: Icon(
-                    Icons.school_outlined,
-                  ),
-                ),
+                const CircleAvatar(child: Icon(Icons.school_outlined)),
 
                 const SizedBox(width: 12),
 
@@ -231,26 +221,19 @@ class _HodYearLevelsScreenState
                 Expanded(
                   child: Text(
                     'Average Completion',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade700),
                   ),
                 ),
                 Text(
                   '${averageCompletion.toStringAsFixed(2)}%',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
 
             const SizedBox(height: 8),
 
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-            ),
+            LinearProgressIndicator(value: progress, minHeight: 8),
 
             const SizedBox(height: 18),
 
@@ -258,26 +241,11 @@ class _HodYearLevelsScreenState
               spacing: 26,
               runSpacing: 14,
               children: [
-                buildSmallStat(
-                  'Students',
-                  studentCount,
-                ),
-                buildSmallStat(
-                  'Units',
-                  unitCount,
-                ),
-                buildSmallStat(
-                  'Logbooks',
-                  totalLogbooks,
-                ),
-                buildSmallStat(
-                  'Active',
-                  activeLogbooks,
-                ),
-                buildSmallStat(
-                  'Completed',
-                  completedLogbooks,
-                ),
+                buildSmallStat('Students', studentCount),
+                buildSmallStat('Units', unitCount),
+                buildSmallStat('Logbooks', totalLogbooks),
+                buildSmallStat('Active', activeLogbooks),
+                buildSmallStat('Completed', completedLogbooks),
               ],
             ),
           ],
@@ -286,27 +254,18 @@ class _HodYearLevelsScreenState
     );
   }
 
-  Widget buildSmallStat(
-    String label,
-    dynamic value,
-  ) {
+  Widget buildSmallStat(String label, dynamic value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value.toString(),
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade700,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
         ),
       ],
     );
@@ -321,9 +280,6 @@ class _HodYearLevelsScreenState
       return value.toDouble();
     }
 
-    return double.tryParse(
-          value.toString(),
-        ) ??
-        0;
+    return double.tryParse(value.toString()) ?? 0;
   }
 }

@@ -7,18 +7,13 @@ import 'supervisor_verification_screen.dart';
 class ClinicalEntriesScreen extends StatefulWidget {
   final int logbookId;
 
-  const ClinicalEntriesScreen({
-    super.key,
-    required this.logbookId,
-  });
+  const ClinicalEntriesScreen({super.key, required this.logbookId});
 
   @override
-  State<ClinicalEntriesScreen> createState() =>
-      _ClinicalEntriesScreenState();
+  State<ClinicalEntriesScreen> createState() => _ClinicalEntriesScreenState();
 }
 
-class _ClinicalEntriesScreenState
-    extends State<ClinicalEntriesScreen> {
+class _ClinicalEntriesScreenState extends State<ClinicalEntriesScreen> {
   late Future<List<dynamic>> entriesFuture;
 
   bool usingOfflineData = false;
@@ -40,8 +35,7 @@ class _ClinicalEntriesScreenState
       // TRY LARAVEL FIRST
       // -----------------------------------------------------------------------
 
-      final serverEntries =
-          await ApiService.getClinicalEntries(
+      final serverEntries = await ApiService.getClinicalEntries(
         widget.logbookId,
       );
 
@@ -54,10 +48,7 @@ class _ClinicalEntriesScreenState
       );
 
       // Also include any local entries that are still waiting to sync.
-      final localEntries =
-          await buildLocalEntries(
-        pendingOnly: true,
-      );
+      final localEntries = await buildLocalEntries(pendingOnly: true);
 
       if (mounted) {
         setState(() {
@@ -65,10 +56,7 @@ class _ClinicalEntriesScreenState
         });
       }
 
-      return [
-        ...localEntries,
-        ...serverEntries,
-      ];
+      return [...localEntries, ...serverEntries];
     } catch (_) {
       // -----------------------------------------------------------------------
       // SERVER FAILED - LOAD SQLITE
@@ -76,22 +64,14 @@ class _ClinicalEntriesScreenState
 
       // Previously downloaded Laravel records.
       final cachedServerEntries =
-          await LocalDatabaseService
-              .getCachedClinicalEntries(
-        widget.logbookId,
-      );
+          await LocalDatabaseService.getCachedClinicalEntries(widget.logbookId);
 
       // Local records include entries created offline. Some may already be
       // SYNCED, so we merge by server ID to avoid displaying duplicates.
-      final localEntries =
-          await buildLocalEntries(
-        pendingOnly: false,
-      );
+      final localEntries = await buildLocalEntries(pendingOnly: false);
 
-      final mergedEntries =
-          mergeCachedAndLocalEntries(
-        cachedServerEntries:
-            cachedServerEntries,
+      final mergedEntries = mergeCachedAndLocalEntries(
+        cachedServerEntries: cachedServerEntries,
         localEntries: localEntries,
       );
 
@@ -120,14 +100,9 @@ class _ClinicalEntriesScreenState
         continue;
       }
 
-      final entry =
-          Map<String, dynamic>.from(
-        rawEntry,
-      );
+      final entry = Map<String, dynamic>.from(rawEntry);
 
-      final serverId = int.tryParse(
-        entry['id']?.toString() ?? '',
-      );
+      final serverId = int.tryParse(entry['id']?.toString() ?? '');
 
       if (serverId != null) {
         cachedServerIds.add(serverId);
@@ -141,31 +116,22 @@ class _ClinicalEntriesScreenState
         continue;
       }
 
-      final entry =
-          Map<String, dynamic>.from(
-        rawEntry,
-      );
+      final entry = Map<String, dynamic>.from(rawEntry);
 
-      final serverId = int.tryParse(
-        entry['id']?.toString() ?? '',
-      );
+      final serverId = int.tryParse(entry['id']?.toString() ?? '');
 
       // If this local record has already synchronized and the same server
       // record exists in the full cache, prefer the cached Laravel copy.
       // The cached copy contains the richer server fields such as lecturer
       // review information and verification history.
-      if (serverId != null &&
-          cachedServerIds.contains(serverId)) {
+      if (serverId != null && cachedServerIds.contains(serverId)) {
         continue;
       }
 
       uniqueLocalEntries.add(entry);
     }
 
-    return [
-      ...uniqueLocalEntries,
-      ...cachedServerEntries,
-    ];
+    return [...uniqueLocalEntries, ...cachedServerEntries];
   }
 
   Future<void> refreshEntries() async {
@@ -180,147 +146,93 @@ class _ClinicalEntriesScreenState
   // BUILD LOCAL SQLITE ENTRIES
   // ===========================================================================
 
-  Future<List<dynamic>> buildLocalEntries({
-    required bool pendingOnly,
-  }) async {
+  Future<List<dynamic>> buildLocalEntries({required bool pendingOnly}) async {
     final allLocalEntries =
-        await LocalDatabaseService
-            .getAllOfflineClinicalEntries();
+        await LocalDatabaseService.getAllOfflineClinicalEntries();
 
-    final logbookEntries =
-    allLocalEntries.where(
-  (record) {
-    final localLogbookId =
-        int.tryParse(
-      record['logbook_id']
-              ?.toString() ??
-          '',
-    );
+    final logbookEntries = allLocalEntries
+        .where((record) {
+          final localLogbookId = int.tryParse(
+            record['logbook_id']?.toString() ?? '',
+          );
 
-    if (localLogbookId !=
-        widget.logbookId) {
-      return false;
-    }
+          if (localLogbookId != widget.logbookId) {
+            return false;
+          }
 
-    if (pendingOnly) {
-      return record['sync_status']
-              ?.toString() ==
-          'PENDING_SYNC';
-    }
+          if (pendingOnly) {
+            return record['sync_status']?.toString() == 'PENDING_SYNC';
+          }
 
-    return true;
-  },
-).map(
-  (record) =>
-      Map<String, dynamic>.from(
-    record,
-  ),
-).toList();
+          return true;
+        })
+        .map((record) => Map<String, dynamic>.from(record))
+        .toList();
 
-    final cachedDetails =
-        await LocalDatabaseService
-            .getCachedLogbookDetails(
+    final cachedDetails = await LocalDatabaseService.getCachedLogbookDetails(
       widget.logbookId,
     );
 
     for (final record in logbookEntries) {
-      final itemId = int.tryParse(
-        record['logbook_item_id']
-                ?.toString() ??
-            '',
-      );
+      final itemId = int.tryParse(record['logbook_item_id']?.toString() ?? '');
 
-      final requirementId =
-          record['requirement_id'] == null
-              ? null
-              : int.tryParse(
-                  record['requirement_id']
-                      .toString(),
-                );
+      final requirementId = record['requirement_id'] == null
+          ? null
+          : int.tryParse(record['requirement_id'].toString());
 
-      final itemInformation =
-          findCachedItemInformation(
+      final itemInformation = findCachedItemInformation(
         cachedDetails,
         itemId,
         requirementId,
       );
 
-      record['item_name'] =
-          itemInformation['item_name'] ??
-              'Clinical Entry';
+      record['item_name'] = itemInformation['item_name'] ?? 'Clinical Entry';
 
-      record['requirement_code'] =
-          itemInformation[
-              'requirement_code'];
+      record['requirement_code'] = itemInformation['requirement_code'];
 
-      record['requirement_label'] =
-          itemInformation[
-              'requirement_label'];
+      record['requirement_label'] = itemInformation['requirement_label'];
     }
 
-    return logbookEntries.map(
-      (record) {
-        final syncStatus =
-            record['sync_status']
-                    ?.toString() ??
-                'PENDING_SYNC';
+    return logbookEntries.map((record) {
+      final syncStatus = record['sync_status']?.toString() ?? 'PENDING_SYNC';
 
-        final serverId =
-            int.tryParse(
-          record['server_id']
-                  ?.toString() ??
-              '',
-        );
+      final serverId = int.tryParse(record['server_id']?.toString() ?? '');
 
-        return {
-          'id': serverId,
-          'local_id': record['id'],
-          'logbook_item_id':
-              record['logbook_item_id'],
-          'requirement_id':
-              record['requirement_id'],
-          'item_name':
-              record['item_name'],
-          'activity_date':
-              record['activity_date'],
-          'activity_time':
-              record['activity_time'],
-          'facility_name':
-              record['facility_name'],
-          'clinical_area':
-              record['clinical_area'],
-          'activity_details':
-              record['activity_details'],
-          'requirement_code':
-              record['requirement_code'],
-          'requirement_label':
-              record['requirement_label'],
-          'status': syncStatus,
-          'sync_status': syncStatus,
-          'verification_status': null,
-          'is_local': true,
-        };
-      },
-    ).toList();
+      return {
+        'id': serverId,
+        'local_id': record['id'],
+        'logbook_item_id': record['logbook_item_id'],
+        'requirement_id': record['requirement_id'],
+        'item_name': record['item_name'],
+        'activity_date': record['activity_date'],
+        'activity_time': record['activity_time'],
+        'facility_name': record['facility_name'],
+        'clinical_area': record['clinical_area'],
+        'activity_details': record['activity_details'],
+        'requirement_code': record['requirement_code'],
+        'requirement_label': record['requirement_label'],
+        'status': syncStatus,
+        'sync_status': syncStatus,
+        'verification_status': null,
+        'is_local': true,
+      };
+    }).toList();
   }
 
   // ===========================================================================
   // FIND ITEM / REQUIREMENT FROM CACHED LOGBOOK
   // ===========================================================================
 
-  Map<String, dynamic>
-      findCachedItemInformation(
+  Map<String, dynamic> findCachedItemInformation(
     Map<String, dynamic>? details,
     int? itemId,
     int? requirementId,
   ) {
-    if (details == null ||
-        itemId == null) {
+    if (details == null || itemId == null) {
       return {};
     }
 
-    final sections =
-        details['sections'];
+    final sections = details['sections'];
 
     if (sections is! List) {
       return {};
@@ -331,13 +243,9 @@ class _ClinicalEntriesScreenState
         continue;
       }
 
-      final section =
-          Map<String, dynamic>.from(
-        rawSection,
-      );
+      final section = Map<String, dynamic>.from(rawSection);
 
-      final items =
-          section['items'];
+      final items = section['items'];
 
       if (items is! List) {
         continue;
@@ -348,68 +256,45 @@ class _ClinicalEntriesScreenState
           continue;
         }
 
-        final item =
-            Map<String, dynamic>.from(
-          rawItem,
-        );
+        final item = Map<String, dynamic>.from(rawItem);
 
-        final currentItemId =
-            int.tryParse(
-          item['id']?.toString() ??
-              '',
-        );
+        final currentItemId = int.tryParse(item['id']?.toString() ?? '');
 
         if (currentItemId != itemId) {
           continue;
         }
 
-        final result =
-            <String, dynamic>{
-          'item_name':
-              item['item_name']
-                  ?.toString(),
+        final result = <String, dynamic>{
+          'item_name': item['item_name']?.toString(),
         };
 
         if (requirementId == null) {
           return result;
         }
 
-        final requirements =
-            item['requirements'];
+        final requirements = item['requirements'];
 
         if (requirements is! List) {
           return result;
         }
 
-        for (final rawRequirement
-            in requirements) {
+        for (final rawRequirement in requirements) {
           if (rawRequirement is! Map) {
             continue;
           }
 
-          final requirement =
-              Map<String, dynamic>.from(
-            rawRequirement,
+          final requirement = Map<String, dynamic>.from(rawRequirement);
+
+          final currentRequirementId = int.tryParse(
+            requirement['id']?.toString() ?? '',
           );
 
-          final currentRequirementId =
-              int.tryParse(
-            requirement['id']
-                    ?.toString() ??
-                '',
-          );
+          if (currentRequirementId == requirementId) {
+            result['requirement_code'] = requirement['requirement_code']
+                ?.toString();
 
-          if (currentRequirementId ==
-              requirementId) {
-            result['requirement_code'] =
-                requirement[
-                        'requirement_code']
-                    ?.toString();
-
-            result['requirement_label'] =
-                requirement[
-                        'requirement_label']
-                    ?.toString();
+            result['requirement_label'] = requirement['requirement_label']
+                ?.toString();
 
             return result;
           }
@@ -426,9 +311,7 @@ class _ClinicalEntriesScreenState
   // STATUS HELPERS
   // ===========================================================================
 
-  IconData statusIcon(
-    String status,
-  ) {
+  IconData statusIcon(String status) {
     switch (status) {
       case 'VERIFIED':
         return Icons.verified;
@@ -450,9 +333,7 @@ class _ClinicalEntriesScreenState
     }
   }
 
-  Color statusColor(
-    String status,
-  ) {
+  Color statusColor(String status) {
     switch (status) {
       case 'VERIFIED':
         return Colors.green;
@@ -474,9 +355,7 @@ class _ClinicalEntriesScreenState
     }
   }
 
-  String readableStatus(
-    String status,
-  ) {
+  String readableStatus(String status) {
     switch (status) {
       case 'VERIFIED':
         return 'Verified';
@@ -497,16 +376,11 @@ class _ClinicalEntriesScreenState
         return 'Draft';
 
       default:
-        return status.replaceAll(
-          '_',
-          ' ',
-        );
+        return status.replaceAll('_', ' ');
     }
   }
 
-  String readableVerificationStatus(
-    String? status,
-  ) {
+  String readableVerificationStatus(String? status) {
     switch (status) {
       case 'MANUAL_REVIEW':
         return 'Waiting for Lecturer Review';
@@ -521,16 +395,11 @@ class _ClinicalEntriesScreenState
         return 'Not Submitted';
 
       default:
-        return status.replaceAll(
-          '_',
-          ' ',
-        );
+        return status.replaceAll('_', ' ');
     }
   }
 
-  Color verificationColor(
-    String? status,
-  ) {
+  Color verificationColor(String? status) {
     switch (status) {
       case 'APPROVED':
         return Colors.green;
@@ -546,9 +415,7 @@ class _ClinicalEntriesScreenState
     }
   }
 
-  IconData verificationIcon(
-    String? status,
-  ) {
+  IconData verificationIcon(String? status) {
     switch (status) {
       case 'APPROVED':
         return Icons.check_circle;
@@ -564,9 +431,7 @@ class _ClinicalEntriesScreenState
     }
   }
 
-  String readableFaceDecision(
-    String? decision,
-  ) {
+  String readableFaceDecision(String? decision) {
     switch (decision) {
       case 'LIKELY_MATCH':
         return 'Likely Match';
@@ -581,16 +446,11 @@ class _ClinicalEntriesScreenState
         return 'Not Available';
 
       default:
-        return decision.replaceAll(
-          '_',
-          ' ',
-        );
+        return decision.replaceAll('_', ' ');
     }
   }
 
-  Color faceDecisionColor(
-    String? decision,
-  ) {
+  Color faceDecisionColor(String? decision) {
     switch (decision) {
       case 'LIKELY_MATCH':
         return Colors.blue;
@@ -610,63 +470,32 @@ class _ClinicalEntriesScreenState
   // DATE / TIME
   // ===========================================================================
 
-  String formatDateTime(
-    dynamic value,
-  ) {
+  String formatDateTime(dynamic value) {
     if (value == null) {
       return '';
     }
 
-    final text =
-        value.toString();
+    final text = value.toString();
 
     if (text.isEmpty) {
       return '';
     }
 
-    final parsed =
-        DateTime.tryParse(
-      text,
-    );
+    final parsed = DateTime.tryParse(text);
 
     if (parsed == null) {
       return text;
     }
 
-    final year =
-        parsed.year.toString();
+    final year = parsed.year.toString();
 
-    final month =
-        parsed.month
-            .toString()
-            .padLeft(
-              2,
-              '0',
-            );
+    final month = parsed.month.toString().padLeft(2, '0');
 
-    final day =
-        parsed.day
-            .toString()
-            .padLeft(
-              2,
-              '0',
-            );
+    final day = parsed.day.toString().padLeft(2, '0');
 
-    final hour =
-        parsed.hour
-            .toString()
-            .padLeft(
-              2,
-              '0',
-            );
+    final hour = parsed.hour.toString().padLeft(2, '0');
 
-    final minute =
-        parsed.minute
-            .toString()
-            .padLeft(
-              2,
-              '0',
-            );
+    final minute = parsed.minute.toString().padLeft(2, '0');
 
     return '$year-$month-$day '
         '$hour:$minute';
@@ -682,48 +511,25 @@ class _ClinicalEntriesScreenState
     required IconData icon,
   }) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
-      decoration:
-          BoxDecoration(
-        color: color.withValues(
-          alpha: 0.10,
-        ),
-        borderRadius:
-            BorderRadius.circular(
-          20,
-        ),
-        border:
-            Border.all(
-          color: color.withValues(
-            alpha: 0.35,
-          ),
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Row(
-        mainAxisSize:
-            MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
 
-          const SizedBox(
-            width: 6,
-          ),
+          const SizedBox(width: 6),
 
           Flexible(
             child: Text(
               text,
               style: TextStyle(
                 color: color,
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
                 fontSize: 12,
               ),
             ),
@@ -743,24 +549,13 @@ class _ClinicalEntriesScreenState
     required String value,
   }) {
     return Padding(
-      padding:
-          const EdgeInsets.only(
-        bottom: 8,
-      ),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 17,
-            color:
-                Colors.grey.shade600,
-          ),
+          Icon(icon, size: 17, color: Colors.grey.shade600),
 
-          const SizedBox(
-            width: 8,
-          ),
+          const SizedBox(width: 8),
 
           Expanded(
             child: RichText(
@@ -768,21 +563,16 @@ class _ClinicalEntriesScreenState
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.4,
-                  color:
-                      Colors.grey.shade800,
-                  fontWeight:
-                      FontWeight.normal,
+                  color: Colors.grey.shade800,
+                  fontWeight: FontWeight.normal,
                 ),
                 children: [
                   TextSpan(
-                    text:
-                        '$label: ',
+                    text: '$label: ',
                     style: TextStyle(
                       fontSize: 13,
-                      color:
-                          Colors.grey.shade700,
-                      fontWeight:
-                          FontWeight.w600,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
 
@@ -790,10 +580,8 @@ class _ClinicalEntriesScreenState
                     text: value,
                     style: TextStyle(
                       fontSize: 13,
-                      color:
-                          Colors.grey.shade900,
-                      fontWeight:
-                          FontWeight.normal,
+                      color: Colors.grey.shade900,
+                      fontWeight: FontWeight.normal,
                     ),
                   ),
                 ],
@@ -809,27 +597,16 @@ class _ClinicalEntriesScreenState
   // LECTURER REVIEW
   // ===========================================================================
 
-  Widget buildLecturerReview(
-    Map<String, dynamic> entry,
-  ) {
-    final verificationStatus =
-        entry['verification_status']
-            ?.toString();
+  Widget buildLecturerReview(Map<String, dynamic> entry) {
+    final verificationStatus = entry['verification_status']?.toString();
 
-    final reviewerName =
-        entry['reviewer_name']
-            ?.toString();
+    final reviewerName = entry['reviewer_name']?.toString();
 
-    final reviewerDwuId =
-        entry['reviewer_dwu_id']
-            ?.toString();
+    final reviewerDwuId = entry['reviewer_dwu_id']?.toString();
 
-    final reviewComment =
-        entry['review_comment']
-            ?.toString();
+    final reviewComment = entry['review_comment']?.toString();
 
-    final reviewedAt =
-        entry['reviewed_at'];
+    final reviewedAt = entry['reviewed_at'];
 
     if (verificationStatus == null) {
       return const SizedBox.shrink();
@@ -837,181 +614,94 @@ class _ClinicalEntriesScreenState
 
     return Container(
       width: double.infinity,
-      margin:
-          const EdgeInsets.only(
-        top: 14,
-      ),
-      padding:
-          const EdgeInsets.all(
-        14,
-      ),
-      decoration:
-          BoxDecoration(
-        color: Colors.grey
-            .withValues(
-          alpha: 0.06,
-        ),
-        borderRadius:
-            BorderRadius.circular(
-          12,
-        ),
-        border:
-            Border.all(
-          color: Colors.grey
-              .withValues(
-            alpha: 0.20,
-          ),
-        ),
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.20)),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(
-                Icons.rate_review,
-                size: 20,
-              ),
+              Icon(Icons.rate_review, size: 20),
 
-              SizedBox(
-                width: 8,
-              ),
+              SizedBox(width: 8),
 
               Text(
                 'Lecturer Review',
-                style: TextStyle(
-                  fontWeight:
-                      FontWeight.bold,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ],
           ),
 
-          const SizedBox(
-            height: 12,
-          ),
+          const SizedBox(height: 12),
 
           buildStatusBadge(
-            text:
-                readableVerificationStatus(
-              verificationStatus,
-            ),
-            color:
-                verificationColor(
-              verificationStatus,
-            ),
-            icon:
-                verificationIcon(
-              verificationStatus,
-            ),
+            text: readableVerificationStatus(verificationStatus),
+            color: verificationColor(verificationStatus),
+            icon: verificationIcon(verificationStatus),
           ),
 
-          if (verificationStatus ==
-              'MANUAL_REVIEW') ...[
-            const SizedBox(
-              height: 10,
-            ),
+          if (verificationStatus == 'MANUAL_REVIEW') ...[
+            const SizedBox(height: 10),
 
             const Text(
               'This supervisor verification '
               'has been submitted and is '
               'waiting for a lecturer to '
               'review it.',
-              style: TextStyle(
-                fontSize: 13,
-                color:
-                    Colors.black87,
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.black87),
             ),
           ],
 
-          if (reviewerName != null &&
-              reviewerName.isNotEmpty) ...[
-            const SizedBox(
-              height: 12,
-            ),
+          if (reviewerName != null && reviewerName.isNotEmpty) ...[
+            const SizedBox(height: 12),
 
             buildInformationRow(
               icon: Icons.person,
-              label:
-                  'Reviewed By',
-              value:
-                  reviewerDwuId != null &&
-                          reviewerDwuId
-                              .isNotEmpty
-                      ? '$reviewerName '
-                          '($reviewerDwuId)'
-                      : reviewerName,
+              label: 'Reviewed By',
+              value: reviewerDwuId != null && reviewerDwuId.isNotEmpty
+                  ? '$reviewerName '
+                        '($reviewerDwuId)'
+                  : reviewerName,
             ),
           ],
 
           if (reviewedAt != null)
             buildInformationRow(
-              icon:
-                  Icons.schedule,
-              label:
-                  'Reviewed At',
-              value:
-                  formatDateTime(
-                reviewedAt,
-              ),
+              icon: Icons.schedule,
+              label: 'Reviewed At',
+              value: formatDateTime(reviewedAt),
             ),
 
-          if (reviewComment != null &&
-              reviewComment
-                  .trim()
-                  .isNotEmpty) ...[
-            const SizedBox(
-              height: 4,
-            ),
+          if (reviewComment != null && reviewComment.trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
 
             const Text(
               'Lecturer Comment',
               style: TextStyle(
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color:
-                    Colors.black87,
+                color: Colors.black87,
               ),
             ),
 
-            const SizedBox(
-              height: 6,
-            ),
+            const SizedBox(height: 6),
 
             Container(
-              width:
-                  double.infinity,
-              padding:
-                  const EdgeInsets.all(
-                12,
-              ),
-              decoration:
-                  BoxDecoration(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius:
-                    BorderRadius.circular(
-                  8,
-                ),
-                border:
-                    Border.all(
-                  color: Colors.grey
-                      .withValues(
-                    alpha: 0.25,
-                  ),
-                ),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.25)),
               ),
               child: Text(
                 reviewComment,
-                style:
-                    const TextStyle(
-                  fontSize: 13,
-                  color:
-                      Colors.black87,
-                ),
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
               ),
             ),
           ],
@@ -1024,95 +714,54 @@ class _ClinicalEntriesScreenState
   // FACE EVIDENCE
   // ===========================================================================
 
-  Widget buildFaceEvidence(
-    Map<String, dynamic> verification,
-  ) {
-    final decision =
-        verification[
-                'face_comparison_decision']
-            ?.toString();
+  Widget buildFaceEvidence(Map<String, dynamic> verification) {
+    final decision = verification['face_comparison_decision']?.toString();
 
-    final distance =
-        verification[
-            'face_lbph_distance'];
+    final distance = verification['face_lbph_distance'];
 
-    if (decision == null &&
-        distance == null) {
+    if (decision == null && distance == null) {
       return const SizedBox.shrink();
     }
 
     return Container(
       width: double.infinity,
-      margin:
-          const EdgeInsets.only(
-        top: 10,
-      ),
-      padding:
-          const EdgeInsets.all(
-        12,
-      ),
-      decoration:
-          BoxDecoration(
-        color: Colors.blueGrey
-            .withValues(
-          alpha: 0.06,
-        ),
-        borderRadius:
-            BorderRadius.circular(
-          10,
-        ),
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blueGrey.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Face Comparison Evidence',
             style: TextStyle(
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
               fontSize: 13,
-              color:
-                  Colors.black87,
+              color: Colors.black87,
             ),
           ),
 
-          const SizedBox(
-            height: 8,
-          ),
+          const SizedBox(height: 8),
 
           buildStatusBadge(
-            text:
-                readableFaceDecision(
-              decision,
-            ),
-            color:
-                faceDecisionColor(
-              decision,
-            ),
+            text: readableFaceDecision(decision),
+            color: faceDecisionColor(decision),
             icon: Icons.face,
           ),
 
           if (distance != null) ...[
-            const SizedBox(
-              height: 8,
-            ),
+            const SizedBox(height: 8),
 
             Text(
               'LBPH Distance: '
               '$distance',
-              style:
-                  const TextStyle(
-                fontSize: 13,
-                color:
-                    Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
             ),
           ],
 
-          const SizedBox(
-            height: 8,
-          ),
+          const SizedBox(height: 8),
 
           const Text(
             'Supporting evidence only. '
@@ -1120,10 +769,8 @@ class _ClinicalEntriesScreenState
             'by the lecturer.',
             style: TextStyle(
               fontSize: 12,
-              color:
-                  Colors.black54,
-              fontStyle:
-                  FontStyle.italic,
+              color: Colors.black54,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],
@@ -1139,206 +786,111 @@ class _ClinicalEntriesScreenState
     Map<String, dynamic> verification,
     int index,
   ) {
-    final status =
-        verification[
-                'verification_status']
-            ?.toString();
+    final status = verification['verification_status']?.toString();
 
-    final supervisorName =
-        verification[
-                'supervisor_name']
-            ?.toString();
+    final supervisorName = verification['supervisor_name']?.toString();
 
-    final facilityName =
-        verification[
-                'facility_name']
-            ?.toString();
+    final facilityName = verification['facility_name']?.toString();
 
-    final timestamp =
-        verification[
-            'verification_timestamp'];
+    final timestamp = verification['verification_timestamp'];
 
-    final reviewerName =
-        verification[
-                'reviewer_name']
-            ?.toString();
+    final reviewerName = verification['reviewer_name']?.toString();
 
-    final reviewComment =
-        verification[
-                'review_comment']
-            ?.toString();
+    final reviewComment = verification['review_comment']?.toString();
 
-    final reviewedAt =
-        verification[
-            'reviewed_at'];
+    final reviewedAt = verification['reviewed_at'];
 
     return Container(
       width: double.infinity,
-      margin:
-          const EdgeInsets.only(
-        bottom: 12,
-      ),
-      padding:
-          const EdgeInsets.all(
-        14,
-      ),
-      decoration:
-          BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
-          12,
-        ),
-        border:
-            Border.all(
-          color: Colors.grey
-              .withValues(
-            alpha: 0.25,
-          ),
-        ),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.25)),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Verification Attempt '
             '${index + 1}',
-            style:
-                const TextStyle(
-              fontWeight:
-                  FontWeight.bold,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
               fontSize: 14,
-              color:
-                  Colors.black87,
+              color: Colors.black87,
             ),
           ),
 
-          const SizedBox(
-            height: 8,
-          ),
+          const SizedBox(height: 8),
 
           Align(
-            alignment:
-                Alignment.centerLeft,
-            child:
-                buildStatusBadge(
-              text:
-                  readableVerificationStatus(
-                status,
-              ),
-              color:
-                  verificationColor(
-                status,
-              ),
-              icon:
-                  verificationIcon(
-                status,
-              ),
+            alignment: Alignment.centerLeft,
+            child: buildStatusBadge(
+              text: readableVerificationStatus(status),
+              color: verificationColor(status),
+              icon: verificationIcon(status),
             ),
           ),
 
-          const SizedBox(
-            height: 12,
-          ),
+          const SizedBox(height: 12),
 
-          if (supervisorName !=
-                  null &&
-              supervisorName
-                  .isNotEmpty)
+          if (supervisorName != null && supervisorName.isNotEmpty)
             buildInformationRow(
-              icon:
-                  Icons.verified_user,
+              icon: Icons.verified_user,
               label: 'Supervisor',
-              value:
-                  supervisorName,
+              value: supervisorName,
             ),
 
-          if (facilityName != null &&
-              facilityName.isNotEmpty)
+          if (facilityName != null && facilityName.isNotEmpty)
             buildInformationRow(
-              icon:
-                  Icons.local_hospital,
+              icon: Icons.local_hospital,
               label: 'Facility',
-              value:
-                  facilityName,
+              value: facilityName,
             ),
 
           if (timestamp != null)
             buildInformationRow(
-              icon:
-                  Icons.schedule,
-              label:
-                  'Verification Time',
-              value:
-                  formatDateTime(
-                timestamp,
-              ),
+              icon: Icons.schedule,
+              label: 'Verification Time',
+              value: formatDateTime(timestamp),
             ),
 
-          buildFaceEvidence(
-            verification,
-          ),
+          buildFaceEvidence(verification),
 
-          if (reviewerName != null &&
-              reviewerName
-                  .isNotEmpty) ...[
-            const SizedBox(
-              height: 10,
-            ),
+          if (reviewerName != null && reviewerName.isNotEmpty) ...[
+            const SizedBox(height: 10),
 
             buildInformationRow(
-              icon:
-                  Icons.school,
-              label:
-                  'Reviewed By',
-              value:
-                  reviewerName,
+              icon: Icons.school,
+              label: 'Reviewed By',
+              value: reviewerName,
             ),
           ],
 
           if (reviewedAt != null)
             buildInformationRow(
-              icon:
-                  Icons.event_available,
-              label:
-                  'Reviewed At',
-              value:
-                  formatDateTime(
-                reviewedAt,
-              ),
+              icon: Icons.event_available,
+              label: 'Reviewed At',
+              value: formatDateTime(reviewedAt),
             ),
 
-          if (reviewComment != null &&
-              reviewComment
-                  .trim()
-                  .isNotEmpty) ...[
-            const SizedBox(
-              height: 4,
-            ),
+          if (reviewComment != null && reviewComment.trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
 
             const Text(
               'Lecturer Comment',
               style: TextStyle(
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color:
-                    Colors.black87,
+                color: Colors.black87,
               ),
             ),
 
-            const SizedBox(
-              height: 6,
-            ),
+            const SizedBox(height: 6),
 
             Text(
               reviewComment,
-              style:
-                  const TextStyle(
-                fontSize: 13,
-                color:
-                    Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
             ),
           ],
         ],
@@ -1350,90 +902,42 @@ class _ClinicalEntriesScreenState
   // VERIFICATION HISTORY
   // ===========================================================================
 
-  Widget buildVerificationHistory(
-    Map<String, dynamic> entry,
-  ) {
-    final rawHistory =
-        entry[
-            'verification_history'];
+  Widget buildVerificationHistory(Map<String, dynamic> entry) {
+    final rawHistory = entry['verification_history'];
 
-    if (rawHistory is! List ||
-        rawHistory.isEmpty) {
+    if (rawHistory is! List || rawHistory.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final history =
-        rawHistory
-            .map(
-              (item) =>
-                  Map<String, dynamic>.from(
-                item as Map,
-              ),
-            )
-            .toList();
+    final history = rawHistory
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
 
     return Container(
-      margin:
-          const EdgeInsets.only(
-        top: 12,
-      ),
-      decoration:
-          BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
-          12,
-        ),
-        border:
-            Border.all(
-          color: Colors.grey
-              .withValues(
-            alpha: 0.20,
-          ),
-        ),
+      margin: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.20)),
       ),
       child: ExpansionTile(
-        leading:
-            const Icon(
-          Icons.history,
-        ),
+        leading: const Icon(Icons.history),
         title: Text(
           'Verification History '
           '(${history.length})',
-          style:
-              const TextStyle(
-            fontWeight:
-                FontWeight.w600,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
             fontSize: 14,
-            color:
-                Colors.black87,
+            color: Colors.black87,
           ),
         ),
-        subtitle:
-            const Text(
+        subtitle: const Text(
           'Tap to view all attempts',
-          style: TextStyle(
-            fontSize: 12,
-            color:
-                Colors.black54,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.black54),
         ),
-        childrenPadding:
-            const EdgeInsets.fromLTRB(
-          12,
-          0,
-          12,
-          12,
-        ),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         children: [
-          for (
-            int i = 0;
-            i < history.length;
-            i++
-          )
-            buildVerificationAttempt(
-              history[i],
-              i,
-            ),
+          for (int i = 0; i < history.length; i++)
+            buildVerificationAttempt(history[i], i),
         ],
       ),
     );
@@ -1443,283 +947,154 @@ class _ClinicalEntriesScreenState
   // BUILD ENTRY CARD
   // ===========================================================================
 
-  Widget buildEntryCard(
-    Map<String, dynamic> entry,
-  ) {
-    final status =
-        entry['status']
-                ?.toString() ??
-            '';
+  Widget buildEntryCard(Map<String, dynamic> entry) {
+    final status = entry['status']?.toString() ?? '';
 
-    final isLocal =
-        entry['is_local'] == true;
+    final isLocal = entry['is_local'] == true;
 
-    final isPendingSync =
-        status == 'PENDING_SYNC';
+    final isPendingSync = status == 'PENDING_SYNC';
 
-    final verificationStatus =
-        entry['verification_status']
-            ?.toString();
+    final verificationStatus = entry['verification_status']?.toString();
 
-    final supervisorName =
-        entry['supervisor_name']
-            ?.toString();
+    final supervisorName = entry['supervisor_name']?.toString();
 
-    final itemName =
-        entry['item_name']
-                ?.toString() ??
-            'Clinical Activity';
+    final itemName = entry['item_name']?.toString() ?? 'Clinical Activity';
 
-    final activityDate =
-        entry['activity_date']
-                ?.toString() ??
-            '';
+    final activityDate = entry['activity_date']?.toString() ?? '';
 
-    final facilityName =
-        entry['facility_name']
-                ?.toString() ??
-            '';
+    final facilityName = entry['facility_name']?.toString() ?? '';
 
-    final clinicalArea =
-        entry['clinical_area']
-            ?.toString();
+    final clinicalArea = entry['clinical_area']?.toString();
 
-    final competencyLevel =
-        entry['competency_level']
-            ?.toString();
+    final competencyLevel = entry['competency_level']?.toString();
 
-    final activityDetails =
-        entry['activity_details']
-            ?.toString();
+    final activityDetails = entry['activity_details']?.toString();
 
-    final requirementCode =
-        entry['requirement_code']
-            ?.toString();
+    final requirementCode = entry['requirement_code']?.toString();
 
-    final requirementLabel =
-        entry['requirement_label']
-            ?.toString();
+    final requirementLabel = entry['requirement_label']?.toString();
 
-    final hasSubmittedVerification =
-        verificationStatus != null;
+    final hasSubmittedVerification = verificationStatus != null;
 
     return Card(
-      margin:
-          const EdgeInsets.only(
-        bottom: 16,
-      ),
-      clipBehavior:
-          Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 16),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding:
-            const EdgeInsets.all(
-          16,
-        ),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  statusIcon(
-                    status,
-                  ),
-                  color:
-                      statusColor(
-                    status,
-                  ),
-                  size: 25,
-                ),
+                Icon(statusIcon(status), color: statusColor(status), size: 25),
 
-                const SizedBox(
-                  width: 10,
-                ),
+                const SizedBox(width: 10),
 
                 Expanded(
                   child: Text(
                     itemName,
-                    style:
-                        const TextStyle(
+                    style: const TextStyle(
                       fontSize: 17,
-                      fontWeight:
-                          FontWeight.bold,
-                      color:
-                          Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
 
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 buildStatusBadge(
-                  text:
-                      readableStatus(
-                    status,
-                  ),
-                  color:
-                      statusColor(
-                    status,
-                  ),
-                  icon:
-                      statusIcon(
-                    status,
-                  ),
+                  text: readableStatus(status),
+                  color: statusColor(status),
+                  icon: statusIcon(status),
                 ),
 
-                if (verificationStatus !=
-                    null)
+                if (verificationStatus != null)
                   buildStatusBadge(
-                    text:
-                        readableVerificationStatus(
-                      verificationStatus,
-                    ),
-                    color:
-                        verificationColor(
-                      verificationStatus,
-                    ),
-                    icon:
-                        verificationIcon(
-                      verificationStatus,
-                    ),
+                    text: readableVerificationStatus(verificationStatus),
+                    color: verificationColor(verificationStatus),
+                    icon: verificationIcon(verificationStatus),
                   ),
               ],
             ),
 
-            const SizedBox(
-              height: 16,
-            ),
+            const SizedBox(height: 16),
 
             buildInformationRow(
-              icon:
-                  Icons.calendar_today,
+              icon: Icons.calendar_today,
               label: 'Date',
-              value:
-                  activityDate,
+              value: activityDate,
             ),
 
             buildInformationRow(
-              icon:
-                  Icons.local_hospital,
+              icon: Icons.local_hospital,
               label: 'Facility',
-              value:
-                  facilityName,
+              value: facilityName,
             ),
 
-            if (clinicalArea != null &&
-                clinicalArea.isNotEmpty)
+            if (clinicalArea != null && clinicalArea.isNotEmpty)
               buildInformationRow(
-                icon:
-                    Icons.location_on,
-                label:
-                    'Clinical Area',
-                value:
-                    clinicalArea,
+                icon: Icons.location_on,
+                label: 'Clinical Area',
+                value: clinicalArea,
               ),
 
-            if (competencyLevel !=
-                    null &&
-                competencyLevel
-                    .isNotEmpty)
+            if (competencyLevel != null && competencyLevel.isNotEmpty)
               buildInformationRow(
-                icon:
-                    Icons.stars,
-                label:
-                    'Competency Level',
-                value:
-                    competencyLevel,
+                icon: Icons.stars,
+                label: 'Competency Level',
+                value: competencyLevel,
               ),
 
-            if (requirementCode != null &&
-                requirementCode
-                    .isNotEmpty)
+            if (requirementCode != null && requirementCode.isNotEmpty)
               buildInformationRow(
-                icon:
-                    Icons.checklist,
-                label:
-                    'Requirement',
-                value:
-                    requirementLabel !=
-                                null &&
-                            requirementLabel
-                                .isNotEmpty
-                        ? '$requirementCode - '
-                            '$requirementLabel'
-                        : requirementCode,
+                icon: Icons.checklist,
+                label: 'Requirement',
+                value: requirementLabel != null && requirementLabel.isNotEmpty
+                    ? '$requirementCode - '
+                          '$requirementLabel'
+                    : requirementCode,
               ),
 
-            if (supervisorName != null &&
-                supervisorName
-                    .isNotEmpty)
+            if (supervisorName != null && supervisorName.isNotEmpty)
               buildInformationRow(
-                icon:
-                    Icons.verified_user,
-                label:
-                    'Supervisor',
-                value:
-                    supervisorName,
+                icon: Icons.verified_user,
+                label: 'Supervisor',
+                value: supervisorName,
               ),
 
             if (activityDetails != null &&
-                activityDetails
-                    .trim()
-                    .isNotEmpty) ...[
-              const SizedBox(
-                height: 6,
-              ),
+                activityDetails.trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
 
               const Text(
                 'Activity Details',
                 style: TextStyle(
-                  fontWeight:
-                      FontWeight.w600,
+                  fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color:
-                      Colors.black87,
+                  color: Colors.black87,
                 ),
               ),
 
-              const SizedBox(
-                height: 6,
-              ),
+              const SizedBox(height: 6),
 
               Container(
-                width:
-                    double.infinity,
-                padding:
-                    const EdgeInsets.all(
-                  12,
-                ),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      Colors.grey
-                          .withValues(
-                    alpha: 0.06,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    10,
-                  ),
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   activityDetails,
-                  style:
-                      const TextStyle(
-                    fontSize: 13,
-                    color:
-                        Colors.black87,
-                  ),
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
                 ),
               ),
             ],
@@ -1727,62 +1102,32 @@ class _ClinicalEntriesScreenState
             // ===============================================================
             // LOCAL OFFLINE RECORD MESSAGE
             // ===============================================================
-
             if (isPendingSync) ...[
-              const SizedBox(
-                height: 14,
-              ),
+              const SizedBox(height: 14),
 
               Container(
-                width:
-                    double.infinity,
-                padding:
-                    const EdgeInsets.all(
-                  12,
-                ),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      Colors.blueGrey
-                          .withValues(
-                    alpha: 0.08,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    10,
-                  ),
-                  border:
-                      Border.all(
-                    color:
-                        Colors.blueGrey
-                            .withValues(
-                      alpha: 0.30,
-                    ),
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Colors.blueGrey.withValues(alpha: 0.30),
                   ),
                 ),
-                child:
-                    const Row(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.cloud_upload,
-                      color:
-                          Colors.blueGrey,
-                    ),
+                    Icon(Icons.cloud_upload, color: Colors.blueGrey),
 
-                    SizedBox(
-                      width: 10,
-                    ),
+                    SizedBox(width: 10),
 
                     Expanded(
                       child: Text(
                         'This clinical entry is stored locally '
                         'and is waiting to sync with the '
                         'SmartLog server.',
-                        style: TextStyle(
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(fontSize: 13),
                       ),
                     ),
                   ],
@@ -1793,71 +1138,45 @@ class _ClinicalEntriesScreenState
             // ===============================================================
             // LECTURER REVIEW
             // ===============================================================
-
-            buildLecturerReview(
-              entry,
-            ),
+            buildLecturerReview(entry),
 
             // ===============================================================
             // VERIFICATION HISTORY
             // ===============================================================
-
-            buildVerificationHistory(
-              entry,
-            ),
+            buildVerificationHistory(entry),
 
             // ===============================================================
             // SUPERVISOR VERIFICATION BUTTON
             // ONLY FOR REAL SERVER RECORDS
             // ===============================================================
-
             if (!isLocal &&
-                status ==
-                    'PENDING_VERIFICATION' &&
+                status == 'PENDING_VERIFICATION' &&
                 !hasSubmittedVerification) ...[
-              const SizedBox(
-                height: 16,
-              ),
+              const SizedBox(height: 16),
 
               SizedBox(
-                width:
-                    double.infinity,
-                child:
-                    ElevatedButton.icon(
+                width: double.infinity,
+                child: ElevatedButton.icon(
                   onPressed: () async {
-                    final entryId =
-                        int.tryParse(
-                      entry['id']
-                              ?.toString() ??
-                          '',
-                    );
+                    final entryId = int.tryParse(entry['id']?.toString() ?? '');
 
                     if (entryId == null) {
-                      ScaffoldMessenger
-                              .of(context)
-                          .showSnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Clinical entry ID is missing.',
-                          ),
+                          content: Text('Clinical entry ID is missing.'),
                         ),
                       );
 
                       return;
                     }
 
-                    final result =
-                        await Navigator.push(
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            SupervisorVerificationScreen(
-                          entryId:
-                              entryId,
-                          procedureName:
-                              itemName,
-                          facilityName:
-                              facilityName,
+                        builder: (_) => SupervisorVerificationScreen(
+                          entryId: entryId,
+                          procedureName: itemName,
+                          facilityName: facilityName,
                         ),
                       ),
                     );
@@ -1866,14 +1185,8 @@ class _ClinicalEntriesScreenState
                       await refreshEntries();
                     }
                   },
-                  icon:
-                      const Icon(
-                    Icons.verified_user,
-                  ),
-                  label:
-                      const Text(
-                    'Supervisor Verification',
-                  ),
+                  icon: const Icon(Icons.verified_user),
+                  label: const Text('Supervisor Verification'),
                 ),
               ),
             ],
@@ -1881,66 +1194,32 @@ class _ClinicalEntriesScreenState
             // ===============================================================
             // WAITING FOR LECTURER REVIEW
             // ===============================================================
-
-            if (status ==
-                    'PENDING_VERIFICATION' &&
-                verificationStatus ==
-                    'MANUAL_REVIEW') ...[
-              const SizedBox(
-                height: 16,
-              ),
+            if (status == 'PENDING_VERIFICATION' &&
+                verificationStatus == 'MANUAL_REVIEW') ...[
+              const SizedBox(height: 16),
 
               Container(
-                width:
-                    double.infinity,
-                padding:
-                    const EdgeInsets.all(
-                  12,
-                ),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      Colors.orange
-                          .withValues(
-                    alpha: 0.08,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    10,
-                  ),
-                  border:
-                      Border.all(
-                    color:
-                        Colors.orange
-                            .withValues(
-                      alpha: 0.30,
-                    ),
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.30),
                   ),
                 ),
-                child:
-                    const Row(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.hourglass_top,
-                      color:
-                          Colors.orange,
-                    ),
+                    Icon(Icons.hourglass_top, color: Colors.orange),
 
-                    SizedBox(
-                      width: 10,
-                    ),
+                    SizedBox(width: 10),
 
                     Expanded(
                       child: Text(
                         'Supervisor verification submitted. '
                         'Waiting for lecturer review.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color:
-                              Colors.black87,
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.black87),
                       ),
                     ),
                   ],
@@ -1958,95 +1237,47 @@ class _ClinicalEntriesScreenState
   // ===========================================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'My Clinical Entries',
-        ),
-      ),
+      appBar: AppBar(title: const Text('My Clinical Entries')),
 
-      body:
-          FutureBuilder<List<dynamic>>(
-        future:
-            entriesFuture,
-        builder:
-            (context, snapshot) {
-          if (snapshot
-                  .connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-              child:
-                  CircularProgressIndicator(),
-            );
+      body: FutureBuilder<List<dynamic>>(
+        future: entriesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
             return RefreshIndicator(
-              onRefresh:
-                  refreshEntries,
+              onRefresh: refreshEntries,
               child: ListView(
-                physics:
-                    const AlwaysScrollableScrollPhysics(),
-                padding:
-                    const EdgeInsets.all(
-                  24,
-                ),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(24),
                 children: [
-                  const SizedBox(
-                    height: 140,
-                  ),
+                  const SizedBox(height: 140),
 
-                  const Icon(
-                    Icons.error_outline,
-                    size: 50,
-                  ),
+                  const Icon(Icons.error_outline, size: 50),
 
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
 
                   const Text(
                     'Unable to load clinical entries.',
-                    textAlign:
-                        TextAlign.center,
-                    style: TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
 
-                  const SizedBox(
-                    height: 8,
-                  ),
+                  const SizedBox(height: 8),
 
-                  Text(
-                    snapshot.error
-                        .toString(),
-                    textAlign:
-                        TextAlign.center,
-                  ),
+                  Text(snapshot.error.toString(), textAlign: TextAlign.center),
 
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
 
                   Center(
-                    child:
-                        ElevatedButton.icon(
-                      onPressed:
-                          refreshEntries,
-                      icon:
-                          const Icon(
-                        Icons.refresh,
-                      ),
-                      label:
-                          const Text(
-                        'Try Again',
-                      ),
+                    child: ElevatedButton.icon(
+                      onPressed: refreshEntries,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try Again'),
                     ),
                   ),
                 ],
@@ -2054,19 +1285,13 @@ class _ClinicalEntriesScreenState
             );
           }
 
-          final entries =
-              snapshot.data ?? [];
+          final entries = snapshot.data ?? [];
 
           return RefreshIndicator(
-            onRefresh:
-                refreshEntries,
+            onRefresh: refreshEntries,
             child: ListView(
-              physics:
-                  const AlwaysScrollableScrollPhysics(),
-              padding:
-                  const EdgeInsets.all(
-                16,
-              ),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
               children: [
                 // ===========================================================
                 // OFFLINE NOTICE
@@ -2074,48 +1299,21 @@ class _ClinicalEntriesScreenState
 
                 if (usingOfflineData)
                   Container(
-                    margin:
-                        const EdgeInsets.only(
-                      bottom: 14,
-                    ),
-                    padding:
-                        const EdgeInsets.all(
-                      12,
-                    ),
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          Colors.orange
-                              .withValues(
-                        alpha: 0.10,
-                      ),
-                      borderRadius:
-                          BorderRadius.circular(
-                        10,
-                      ),
-                      border:
-                          Border.all(
-                        color:
-                            Colors.orange
-                                .withValues(
-                          alpha: 0.35,
-                        ),
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.orange.withValues(alpha: 0.35),
                       ),
                     ),
-                    child:
-                        const Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.offline_bolt,
-                          color:
-                              Colors.orange,
-                        ),
+                        Icon(Icons.offline_bolt, color: Colors.orange),
 
-                        SizedBox(
-                          width: 10,
-                        ),
+                        SizedBox(width: 10),
 
                         Expanded(
                           child: Text(
@@ -2130,28 +1328,18 @@ class _ClinicalEntriesScreenState
                 // ===========================================================
                 // EMPTY STATE
                 // ===========================================================
-
                 if (entries.isEmpty)
                   const Padding(
-                    padding:
-                        EdgeInsets.only(
-                      top: 150,
-                    ),
+                    padding: EdgeInsets.only(top: 150),
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.assignment_outlined,
-                          size: 50,
-                        ),
+                        Icon(Icons.assignment_outlined, size: 50),
 
-                        SizedBox(
-                          height: 12,
-                        ),
+                        SizedBox(height: 12),
 
                         Text(
                           'No clinical entries recorded yet.',
-                          textAlign:
-                              TextAlign.center,
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -2160,19 +1348,11 @@ class _ClinicalEntriesScreenState
                 // ===========================================================
                 // ENTRY LIST
                 // ===========================================================
+                ...entries.map((rawEntry) {
+                  final entry = Map<String, dynamic>.from(rawEntry as Map);
 
-                ...entries.map(
-                  (rawEntry) {
-                    final entry =
-                        Map<String, dynamic>.from(
-                      rawEntry as Map,
-                    );
-
-                    return buildEntryCard(
-                      entry,
-                    );
-                  },
-                ),
+                  return buildEntryCard(entry);
+                }),
               ],
             ),
           );

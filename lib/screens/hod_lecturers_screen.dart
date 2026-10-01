@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 import 'hod_lecturer_progress_screen.dart';
 
@@ -6,19 +7,16 @@ class HodLecturersScreen extends StatefulWidget {
   const HodLecturersScreen({super.key});
 
   @override
-  State<HodLecturersScreen> createState() =>
-      _HodLecturersScreenState();
+  State<HodLecturersScreen> createState() => _HodLecturersScreenState();
 }
 
-class _HodLecturersScreenState
-    extends State<HodLecturersScreen> {
+class _HodLecturersScreenState extends State<HodLecturersScreen> {
   bool loading = true;
   String? errorMessage;
 
   List<dynamic> lecturers = [];
 
-  final TextEditingController searchController =
-      TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
@@ -39,8 +37,7 @@ class _HodLecturersScreenState
     });
 
     try {
-      final result =
-          await ApiService.getHodLecturers(
+      final result = await ApiService.getHodLecturers(
         search: searchController.text.trim(),
       );
 
@@ -53,8 +50,7 @@ class _HodLecturersScreenState
       if (!mounted) return;
 
       setState(() {
-        errorMessage =
-            'Unable to load department lecturers.';
+        errorMessage = 'Unable to load department lecturers.';
       });
     } finally {
       if (mounted) {
@@ -70,16 +66,11 @@ class _HodLecturersScreenState
     await loadLecturers();
   }
 
-  Future<void> openLecturerProgress(
-    int lecturerId,
-  ) async {
+  Future<void> openLecturerProgress(int lecturerId) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            HodLecturerProgressScreen(
-          lecturerId: lecturerId,
-        ),
+        builder: (_) => HodLecturerProgressScreen(lecturerId: lecturerId),
       ),
     );
 
@@ -97,10 +88,7 @@ class _HodLecturersScreenState
       return value.toDouble();
     }
 
-    return double.tryParse(
-          value.toString(),
-        ) ??
-        0;
+    return double.tryParse(value.toString()) ?? 0;
   }
 
   Map<String, dynamic> mapOf(dynamic value) {
@@ -122,14 +110,23 @@ class _HodLecturersScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FD),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF062B63),
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
         title: const Text('Teaching Staff'),
         actions: [
           IconButton(
             tooltip: 'Refresh',
-            onPressed: loading
-                ? null
-                : loadLecturers,
+            onPressed: loading ? null : loadLecturers,
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -139,13 +136,10 @@ class _HodLecturersScreenState
           buildSearchCard(),
           Expanded(
             child: loading
-                ? const Center(
-                    child:
-                        CircularProgressIndicator(),
-                  )
+                ? const Center(child: CircularProgressIndicator())
                 : errorMessage != null
-                    ? buildErrorState()
-                    : buildLecturerList(),
+                ? buildErrorState()
+                : buildLecturerList(),
           ),
         ],
       ),
@@ -154,6 +148,13 @@ class _HodLecturersScreenState
 
   Widget buildSearchCard() {
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
+      ),
       margin: const EdgeInsets.all(16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -161,14 +162,11 @@ class _HodLecturersScreenState
           children: [
             TextField(
               controller: searchController,
-              textInputAction:
-                  TextInputAction.search,
+              textInputAction: TextInputAction.search,
               decoration: const InputDecoration(
                 labelText: 'Search Lecturer',
-                hintText:
-                    'Name, DWU ID, or email',
-                prefixIcon:
-                    Icon(Icons.search),
+                hintText: 'Name, DWU ID, or email',
+                prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
               onSubmitted: (_) {
@@ -180,27 +178,17 @@ class _HodLecturersScreenState
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: loading
-                        ? null
-                        : loadLecturers,
-                    icon:
-                        const Icon(Icons.search),
-                    label:
-                        const Text('Search'),
+                    onPressed: loading ? null : loadLecturers,
+                    icon: const Icon(Icons.search),
+                    label: const Text('Search'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: loading
-                        ? null
-                        : clearSearch,
-                    icon: const Icon(
-                      Icons.clear,
-                    ),
-                    label: const Text(
-                      'Clear',
-                    ),
+                    onPressed: loading ? null : clearSearch,
+                    icon: const Icon(Icons.clear),
+                    label: const Text('Clear'),
                   ),
                 ),
               ],
@@ -218,22 +206,14 @@ class _HodLecturersScreenState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 52,
-            ),
+            const Icon(Icons.error_outline, size: 52),
             const SizedBox(height: 16),
-            Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-            ),
+            Text(errorMessage!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: loadLecturers,
-              icon:
-                  const Icon(Icons.refresh),
-              label:
-                  const Text('Try Again'),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
             ),
           ],
         ),
@@ -245,12 +225,7 @@ class _HodLecturersScreenState
     return RefreshIndicator(
       onRefresh: loadLecturers,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          0,
-          16,
-          24,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
           Row(
             children: [
@@ -260,174 +235,118 @@ class _HodLecturersScreenState
                   '${lecturers.length == 1 ? '' : 's'}',
                   style: const TextStyle(
                     fontSize: 17,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               const Chip(
-                avatar: Icon(
-                  Icons.visibility_outlined,
-                  size: 17,
-                ),
-                label:
-                    Text('Read Only'),
+                avatar: Icon(Icons.visibility_outlined, size: 17),
+                label: Text('Read Only'),
               ),
             ],
           ),
           const SizedBox(height: 12),
           if (lecturers.isEmpty)
             const Card(
+              color: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                side: BorderSide(color: Color(0xFFDBE7F2)),
+              ),
               child: Padding(
-                padding:
-                    EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 48,
-                    ),
+                    Icon(Icons.people_outline, size: 48),
                     SizedBox(height: 12),
-                    Text(
-                      'No lecturers found.',
-                      textAlign:
-                          TextAlign.center,
-                    ),
+                    Text('No lecturers found.', textAlign: TextAlign.center),
                   ],
                 ),
               ),
             )
           else
             ...lecturers.map((item) {
-              final lecturer =
-                  mapOf(item);
+              final lecturer = mapOf(item);
 
-              return buildLecturerCard(
-                lecturer,
-              );
+              return buildLecturerCard(lecturer);
             }),
         ],
       ),
     );
   }
 
-  Widget buildLecturerCard(
-    Map<String, dynamic> lecturer,
-  ) {
-    final statistics =
-        mapOf(lecturer['statistics']);
+  Widget buildLecturerCard(Map<String, dynamic> lecturer) {
+    final statistics = mapOf(lecturer['statistics']);
 
-    final units =
-        listOf(lecturer['units']);
+    final units = listOf(lecturer['units']);
 
-    final assignedUnits =
-        statistics[
-                'assigned_unit_count'] ??
-            0;
+    final assignedUnits = statistics['assigned_unit_count'] ?? 0;
 
-    final enrolledStudents =
-        statistics[
-                'enrolled_student_count'] ??
-            0;
+    final enrolledStudents = statistics['enrolled_student_count'] ?? 0;
 
-    final logbookCount =
-        statistics['logbook_count'] ?? 0;
+    final logbookCount = statistics['logbook_count'] ?? 0;
 
-    final averageCompletion =
-        toDouble(
-      statistics[
-          'average_completion_percentage'],
+    final averageCompletion = toDouble(
+      statistics['average_completion_percentage'],
     );
 
-    final progress =
-        (averageCompletion / 100)
-            .clamp(0.0, 1.0);
+    final progress = (averageCompletion / 100).clamp(0.0, 1.0);
 
-    final lecturerId =
-        int.tryParse(
-      lecturer['id']?.toString() ?? '',
-    );
+    final lecturerId = int.tryParse(lecturer['id']?.toString() ?? '');
 
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 12,
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
       ),
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        borderRadius:
-            BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12),
         onTap: lecturerId == null
             ? null
             : () {
-                openLecturerProgress(
-                  lecturerId,
-                );
+                openLecturerProgress(lecturerId);
               },
         child: Padding(
-          padding:
-              const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CircleAvatar(
-                    child: Icon(
-                      Icons.person_outline,
-                    ),
-                  ),
+                  const CircleAvatar(child: Icon(Icons.person_outline)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          lecturer['name']
-                                  ?.toString() ??
-                              'Lecturer',
-                          style:
-                              const TextStyle(
+                          lecturer['name']?.toString() ?? 'Lecturer',
+                          style: const TextStyle(
                             fontSize: 16,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(
-                          height: 4,
-                        ),
+                        const SizedBox(height: 4),
+                        Text(lecturer['dwu_id']?.toString() ?? 'No DWU ID'),
+                        const SizedBox(height: 3),
                         Text(
-                          lecturer['dwu_id']
-                                  ?.toString() ??
-                              'No DWU ID',
-                        ),
-                        const SizedBox(
-                          height: 3,
-                        ),
-                        Text(
-                          lecturer['email']
-                                  ?.toString() ??
-                              '',
-                          style: TextStyle(
-                            color: Colors
-                                .grey.shade700,
-                          ),
+                          lecturer['email']?.toString() ?? '',
+                          style: TextStyle(color: Colors.grey.shade700),
                         ),
                       ],
                     ),
                   ),
                   const Column(
                     children: [
-                      Chip(
-                        label:
-                            Text('LECTURER'),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                      ),
+                      Chip(label: Text('LECTURER')),
+                      Icon(Icons.chevron_right),
                     ],
                   ),
                 ],
@@ -440,29 +359,19 @@ class _HodLecturersScreenState
                   Expanded(
                     child: Text(
                       'Average Unit Progress',
-                      style: TextStyle(
-                        color: Colors
-                            .grey.shade700,
-                      ),
+                      style: TextStyle(color: Colors.grey.shade700),
                     ),
                   ),
                   Text(
                     '${averageCompletion.toStringAsFixed(2)}%',
-                    style:
-                        const TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
 
               const SizedBox(height: 8),
 
-              LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-              ),
+              LinearProgressIndicator(value: progress, minHeight: 8),
 
               const SizedBox(height: 16),
 
@@ -470,18 +379,9 @@ class _HodLecturersScreenState
                 spacing: 24,
                 runSpacing: 12,
                 children: [
-                  buildSmallStat(
-                    'Assigned Units',
-                    assignedUnits,
-                  ),
-                  buildSmallStat(
-                    'Students',
-                    enrolledStudents,
-                  ),
-                  buildSmallStat(
-                    'Logbooks',
-                    logbookCount,
-                  ),
+                  buildSmallStat('Assigned Units', assignedUnits),
+                  buildSmallStat('Students', enrolledStudents),
+                  buildSmallStat('Logbooks', logbookCount),
                 ],
               ),
 
@@ -491,36 +391,20 @@ class _HodLecturersScreenState
                 const SizedBox(height: 8),
                 const Text(
                   'Assigned Units',
-                  style: TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 ...units.map((item) {
-                  final unit =
-                      mapOf(item);
+                  final unit = mapOf(item);
 
-                  final year =
-                      mapOf(
-                    unit['year_level'],
-                  );
+                  final year = mapOf(unit['year_level']);
 
                   return Padding(
-                    padding:
-                        const EdgeInsets.only(
-                      bottom: 8,
-                    ),
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons
-                              .menu_book_outlined,
-                          size: 18,
-                        ),
-                        const SizedBox(
-                          width: 8,
-                        ),
+                        const Icon(Icons.menu_book_outlined, size: 18),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             '${unit['unit_code'] ?? ''} - '
@@ -528,13 +412,8 @@ class _HodLecturersScreenState
                           ),
                         ),
                         Text(
-                          year['year_name']
-                                  ?.toString() ??
-                              '',
-                          style: TextStyle(
-                            color: Colors
-                                .grey.shade700,
-                          ),
+                          year['year_name']?.toString() ?? '',
+                          style: TextStyle(color: Colors.grey.shade700),
                         ),
                       ],
                     ),
@@ -546,26 +425,14 @@ class _HodLecturersScreenState
 
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.all(
-                  12,
-                ),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(
-                    8,
-                  ),
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),
                 child: const Row(
                   children: [
-                    Icon(
-                      Icons
-                          .visibility_outlined,
-                      size: 18,
-                    ),
+                    Icon(Icons.visibility_outlined, size: 18),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -582,29 +449,18 @@ class _HodLecturersScreenState
     );
   }
 
-  Widget buildSmallStat(
-    String label,
-    dynamic value,
-  ) {
+  Widget buildSmallStat(String label, dynamic value) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value.toString(),
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color:
-                Colors.grey.shade700,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
         ),
       ],
     );

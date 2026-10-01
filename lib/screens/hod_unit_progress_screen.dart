@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 
 class HodUnitProgressScreen extends StatefulWidget {
   final int unitId;
 
-  const HodUnitProgressScreen({
-    super.key,
-    required this.unitId,
-  });
+  const HodUnitProgressScreen({super.key, required this.unitId});
 
   @override
-  State<HodUnitProgressScreen> createState() =>
-      _HodUnitProgressScreenState();
+  State<HodUnitProgressScreen> createState() => _HodUnitProgressScreenState();
 }
 
-class _HodUnitProgressScreenState
-    extends State<HodUnitProgressScreen> {
+class _HodUnitProgressScreenState extends State<HodUnitProgressScreen> {
   bool loading = true;
   String? errorMessage;
 
@@ -34,10 +30,7 @@ class _HodUnitProgressScreenState
     });
 
     try {
-      final result =
-          await ApiService.getHodUnitProgress(
-        widget.unitId,
-      );
+      final result = await ApiService.getHodUnitProgress(widget.unitId);
 
       if (!mounted) return;
 
@@ -48,8 +41,7 @@ class _HodUnitProgressScreenState
       if (!mounted) return;
 
       setState(() {
-        errorMessage =
-            'Unable to load unit progress.';
+        errorMessage = 'Unable to load unit progress.';
       });
     } finally {
       if (mounted) {
@@ -63,7 +55,18 @@ class _HodUnitProgressScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FD),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF062B63),
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
         title: const Text('Unit Progress'),
         actions: [
           IconButton(
@@ -74,12 +77,10 @@ class _HodUnitProgressScreenState
         ],
       ),
       body: loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : errorMessage != null
-              ? buildErrorState()
-              : buildContent(),
+          ? buildErrorState()
+          : buildContent(),
     );
   }
 
@@ -90,15 +91,9 @@ class _HodUnitProgressScreenState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 52,
-            ),
+            const Icon(Icons.error_outline, size: 52),
             const SizedBox(height: 16),
-            Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-            ),
+            Text(errorMessage!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: loadProgress,
@@ -118,45 +113,32 @@ class _HodUnitProgressScreenState
     final summary = mapOf(result['summary']);
     final access = mapOf(result['access']);
 
-    final students =
-        listOf(result['students']);
+    final students = listOf(result['students']);
 
-    final logbooks =
-        mapOf(summary['logbooks']);
+    final logbooks = mapOf(summary['logbooks']);
 
-    final clinicalEntries =
-        mapOf(summary['clinical_entries']);
+    final clinicalEntries = mapOf(summary['clinical_entries']);
 
-    final yearLevel =
-        mapOf(unit['year_level']);
+    final yearLevel = mapOf(unit['year_level']);
 
-    final unitCode =
-        unit['unit_code']?.toString() ?? 'UNIT';
+    final unitCode = unit['unit_code']?.toString() ?? 'UNIT';
 
-    final unitName =
-        unit['unit_name']?.toString() ?? 'Unit';
+    final unitName = unit['unit_name']?.toString() ?? 'Unit';
 
-    final yearName =
-        yearLevel['year_name']?.toString() ??
-            'Year Level Not Set';
+    final yearName = yearLevel['year_name']?.toString() ?? 'Year Level Not Set';
 
     final averageCompletion = toDouble(
       logbooks['average_completion_percentage'],
     );
 
-    final progress =
-        (averageCompletion / 100)
-            .clamp(0.0, 1.0);
+    final progress = (averageCompletion / 100).clamp(0.0, 1.0);
 
-    final isReadOnly =
-        access['mode']?.toString() ==
-            'READ_ONLY';
+    final isReadOnly = access['mode']?.toString() == 'READ_ONLY';
 
     return RefreshIndicator(
       onRefresh: loadProgress,
       child: ListView(
-        physics:
-            const AlwaysScrollableScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
           buildUnitHeader(
@@ -165,15 +147,14 @@ class _HodUnitProgressScreenState
             yearName: yearName,
             requiresLogbook:
                 unit['requires_logbook'] == true ||
-                    unit['requires_logbook'] == 1,
+                unit['requires_logbook'] == 1,
             isReadOnly: isReadOnly,
           ),
 
           const SizedBox(height: 16),
 
           buildOverallProgressCard(
-            averageCompletion:
-                averageCompletion,
+            averageCompletion: averageCompletion,
             progress: progress,
             summary: summary,
             logbooks: logbooks,
@@ -181,9 +162,7 @@ class _HodUnitProgressScreenState
 
           const SizedBox(height: 16),
 
-          buildClinicalEntryCard(
-            clinicalEntries,
-          ),
+          buildClinicalEntryCard(clinicalEntries),
 
           const SizedBox(height: 20),
 
@@ -192,10 +171,7 @@ class _HodUnitProgressScreenState
               const Expanded(
                 child: Text(
                   'Enrolled Students',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               Text(
@@ -212,14 +188,18 @@ class _HodUnitProgressScreenState
 
           if (students.isEmpty)
             const Card(
+              color: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                side: BorderSide(color: Color(0xFFDBE7F2)),
+              ),
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 48,
-                    ),
+                    Icon(Icons.people_outline, size: 48),
                     SizedBox(height: 12),
                     Text(
                       'No students are enrolled in this unit.',
@@ -231,9 +211,7 @@ class _HodUnitProgressScreenState
             )
           else
             ...students.map((item) {
-              return buildStudentCard(
-                mapOf(item),
-              );
+              return buildStudentCard(mapOf(item));
             }),
 
           const SizedBox(height: 8),
@@ -252,42 +230,36 @@ class _HodUnitProgressScreenState
     required bool isReadOnly,
   }) {
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(
-                  child: Icon(
-                    Icons.menu_book_outlined,
-                  ),
-                ),
+                const CircleAvatar(child: Icon(Icons.menu_book_outlined)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         unitCode,
                         style: const TextStyle(
                           fontSize: 18,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        unitName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
+                      Text(unitName, style: const TextStyle(fontSize: 16)),
                     ],
                   ),
                 ),
@@ -301,18 +273,12 @@ class _HodUnitProgressScreenState
               runSpacing: 8,
               children: [
                 Chip(
-                  avatar: const Icon(
-                    Icons.school_outlined,
-                    size: 17,
-                  ),
+                  avatar: const Icon(Icons.school_outlined, size: 17),
                   label: Text(yearName),
                 ),
                 if (isReadOnly)
                   const Chip(
-                    avatar: Icon(
-                      Icons.visibility_outlined,
-                      size: 17,
-                    ),
+                    avatar: Icon(Icons.visibility_outlined, size: 17),
                     label: Text('Read Only'),
                   ),
               ],
@@ -324,8 +290,7 @@ class _HodUnitProgressScreenState
               children: [
                 Icon(
                   requiresLogbook
-                      ? Icons
-                          .assignment_turned_in_outlined
+                      ? Icons.assignment_turned_in_outlined
                       : Icons.assignment_outlined,
                   size: 18,
                 ),
@@ -352,18 +317,21 @@ class _HodUnitProgressScreenState
     required Map<String, dynamic> logbooks,
   }) {
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Overall Unit Progress',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 16),
@@ -373,9 +341,7 @@ class _HodUnitProgressScreenState
                 Expanded(
                   child: Text(
                     'Average Completion',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade700),
                   ),
                 ),
                 Text(
@@ -390,10 +356,7 @@ class _HodUnitProgressScreenState
 
             const SizedBox(height: 8),
 
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 9,
-            ),
+            LinearProgressIndicator(value: progress, minHeight: 9),
 
             const SizedBox(height: 20),
 
@@ -403,8 +366,7 @@ class _HodUnitProgressScreenState
               children: [
                 buildStat(
                   'Students',
-                  summary['enrolled_students'] ??
-                      0,
+                  summary['enrolled_students'] ?? 0,
                   Icons.people_outline,
                 ),
                 buildStat(
@@ -430,22 +392,23 @@ class _HodUnitProgressScreenState
     );
   }
 
-  Widget buildClinicalEntryCard(
-    Map<String, dynamic> entries,
-  ) {
+  Widget buildClinicalEntryCard(Map<String, dynamic> entries) {
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Clinical Entries',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 16),
@@ -466,9 +429,7 @@ class _HodUnitProgressScreenState
                 ),
                 buildStat(
                   'Pending',
-                  entries[
-                          'pending_verification'] ??
-                      0,
+                  entries['pending_verification'] ?? 0,
                   Icons.hourglass_empty,
                 ),
                 buildStat(
@@ -484,85 +445,63 @@ class _HodUnitProgressScreenState
     );
   }
 
-  Widget buildStudentCard(
-    Map<String, dynamic> item,
-  ) {
-    final student =
-        mapOf(item['student']);
+  Widget buildStudentCard(Map<String, dynamic> item) {
+    final student = mapOf(item['student']);
 
-    final enrollment =
-        mapOf(item['enrollment']);
+    final enrollment = mapOf(item['enrollment']);
 
-    final progressData =
-        mapOf(item['progress']);
+    final progressData = mapOf(item['progress']);
 
-    final yearLevel =
-        mapOf(student['year_level']);
+    final yearLevel = mapOf(student['year_level']);
 
-    final clinicalEntries = mapOf(
-      progressData['clinical_entries'],
-    );
+    final clinicalEntries = mapOf(progressData['clinical_entries']);
 
-    final logbooks =
-        listOf(item['logbooks']);
+    final logbooks = listOf(item['logbooks']);
 
-    final name =
-        student['name']?.toString() ??
-            'Student';
+    final name = student['name']?.toString() ?? 'Student';
 
-    final dwuId =
-        student['dwu_id']?.toString() ?? '-';
+    final dwuId = student['dwu_id']?.toString() ?? '-';
 
-    final yearName =
-        yearLevel['year_name']?.toString() ??
-            'Year Level Not Set';
+    final yearName = yearLevel['year_name']?.toString() ?? 'Year Level Not Set';
 
-    final enrollmentStatus =
-        enrollment['status']?.toString() ??
-            'UNKNOWN';
+    final enrollmentStatus = enrollment['status']?.toString() ?? 'UNKNOWN';
 
     final averageCompletion = toDouble(
-      progressData[
-          'average_completion_percentage'],
+      progressData['average_completion_percentage'],
     );
 
-    final studentProgress =
-        (averageCompletion / 100)
-            .clamp(0.0, 1.0);
+    final studentProgress = (averageCompletion / 100).clamp(0.0, 1.0);
 
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 12,
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
       ),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(
-                  child: Icon(
-                    Icons.person_outline,
-                  ),
-                ),
+                const CircleAvatar(child: Icon(Icons.person_outline)),
 
                 const SizedBox(width: 12),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         name,
                         style: const TextStyle(
                           fontSize: 16,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
@@ -570,10 +509,7 @@ class _HodUnitProgressScreenState
 
                       Text(
                         '$dwuId • $yearName',
-                        style: TextStyle(
-                          color:
-                              Colors.grey.shade700,
-                        ),
+                        style: TextStyle(color: Colors.grey.shade700),
                       ),
                     ],
                   ),
@@ -581,11 +517,7 @@ class _HodUnitProgressScreenState
 
                 const SizedBox(width: 8),
 
-                Chip(
-                  label: Text(
-                    enrollmentStatus,
-                  ),
-                ),
+                Chip(label: Text(enrollmentStatus)),
               ],
             ),
 
@@ -596,28 +528,19 @@ class _HodUnitProgressScreenState
                 Expanded(
                   child: Text(
                     'Logbook Completion',
-                    style: TextStyle(
-                      color:
-                          Colors.grey.shade700,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade700),
                   ),
                 ),
                 Text(
                   '${averageCompletion.toStringAsFixed(2)}%',
-                  style: const TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
 
             const SizedBox(height: 8),
 
-            LinearProgressIndicator(
-              value: studentProgress,
-              minHeight: 8,
-            ),
+            LinearProgressIndicator(value: studentProgress, minHeight: 8),
 
             const SizedBox(height: 16),
 
@@ -625,30 +548,13 @@ class _HodUnitProgressScreenState
               spacing: 22,
               runSpacing: 14,
               children: [
-                buildSmallStat(
-                  'Logbooks',
-                  progressData[
-                          'logbook_count'] ??
-                      0,
-                ),
-                buildSmallStat(
-                  'Verified',
-                  clinicalEntries[
-                          'verified'] ??
-                      0,
-                ),
+                buildSmallStat('Logbooks', progressData['logbook_count'] ?? 0),
+                buildSmallStat('Verified', clinicalEntries['verified'] ?? 0),
                 buildSmallStat(
                   'Pending',
-                  clinicalEntries[
-                          'pending_verification'] ??
-                      0,
+                  clinicalEntries['pending_verification'] ?? 0,
                 ),
-                buildSmallStat(
-                  'Rejected',
-                  clinicalEntries[
-                          'rejected'] ??
-                      0,
-                ),
+                buildSmallStat('Rejected', clinicalEntries['rejected'] ?? 0),
               ],
             ),
 
@@ -659,17 +565,13 @@ class _HodUnitProgressScreenState
 
               const Text(
                 'Logbook Details',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 10),
 
               ...logbooks.map((logbookItem) {
-                return buildLogbook(
-                  mapOf(logbookItem),
-                );
+                return buildLogbook(mapOf(logbookItem));
               }),
             ],
           ],
@@ -678,58 +580,34 @@ class _HodUnitProgressScreenState
     );
   }
 
-  Widget buildLogbook(
-    Map<String, dynamic> logbook,
-  ) {
+  Widget buildLogbook(Map<String, dynamic> logbook) {
     final templateName =
-        logbook['template_name']
-                ?.toString() ??
-            'Clinical Logbook';
+        logbook['template_name']?.toString() ?? 'Clinical Logbook';
 
-    final status =
-        logbook['status']?.toString() ??
-            'UNKNOWN';
+    final status = logbook['status']?.toString() ?? 'UNKNOWN';
 
-    final completion = toDouble(
-      logbook['completion_percentage'],
-    );
+    final completion = toDouble(logbook['completion_percentage']);
 
-    final minimum = toDouble(
-      logbook[
-          'minimum_completion_percentage'],
-    );
+    final minimum = toDouble(logbook['minimum_completion_percentage']);
 
-    final requirementMet =
-        logbook[
-                'completion_requirement_met'] ==
-            true;
+    final requirementMet = logbook['completion_requirement_met'] == true;
 
-    final progress =
-        (completion / 100)
-            .clamp(0.0, 1.0);
+    final progress = (completion / 100).clamp(0.0, 1.0);
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(
-        bottom: 10,
-      ),
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: Colors.grey.shade300,
-        ),
-        borderRadius:
-            BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             templateName,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
 
           const SizedBox(height: 8),
@@ -738,9 +616,7 @@ class _HodUnitProgressScreenState
             spacing: 8,
             runSpacing: 8,
             children: [
-              Chip(
-                label: Text(status),
-              ),
+              Chip(label: Text(status)),
               Chip(
                 avatar: Icon(
                   requirementMet
@@ -748,11 +624,7 @@ class _HodUnitProgressScreenState
                       : Icons.timelapse_outlined,
                   size: 17,
                 ),
-                label: Text(
-                  requirementMet
-                      ? 'Requirement Met'
-                      : 'In Progress',
-                ),
+                label: Text(requirementMet ? 'Requirement Met' : 'In Progress'),
               ),
             ],
           ),
@@ -764,78 +636,53 @@ class _HodUnitProgressScreenState
               Expanded(
                 child: Text(
                   'Completion',
-                  style: TextStyle(
-                    color:
-                        Colors.grey.shade700,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade700),
                 ),
               ),
               Text(
                 '${completion.toStringAsFixed(2)}%',
-                style: const TextStyle(
-                  fontWeight:
-                      FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
 
           const SizedBox(height: 6),
 
-          LinearProgressIndicator(
-            value: progress,
-            minHeight: 7,
-          ),
+          LinearProgressIndicator(value: progress, minHeight: 7),
 
           const SizedBox(height: 8),
 
           Text(
             'Required: '
             '${minimum.toStringAsFixed(2)}%',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade700,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
           ),
         ],
       ),
     );
   }
 
-  Widget buildStat(
-    String label,
-    dynamic value,
-    IconData icon,
-  ) {
+  Widget buildStat(String label, dynamic value, IconData icon) {
     return SizedBox(
       width: 120,
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 20,
-          ),
+          Icon(icon, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   value.toString(),
                   style: const TextStyle(
                     fontSize: 17,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color:
-                        Colors.grey.shade700,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                 ),
               ],
             ),
@@ -845,28 +692,18 @@ class _HodUnitProgressScreenState
     );
   }
 
-  Widget buildSmallStat(
-    String label,
-    dynamic value,
-  ) {
+  Widget buildSmallStat(String label, dynamic value) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value.toString(),
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade700,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
         ),
       ],
     );
@@ -874,15 +711,19 @@ class _HodUnitProgressScreenState
 
   Widget buildReadOnlyNotice() {
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.visibility_outlined,
-            ),
+            const Icon(Icons.visibility_outlined),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -891,9 +732,7 @@ class _HodUnitProgressScreenState
                 'enrollment, and logbook changes '
                 'are handled by the appropriate '
                 'lecturer or student workflow.',
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                ),
+                style: TextStyle(color: Colors.grey.shade700),
               ),
             ),
           ],
@@ -902,21 +741,15 @@ class _HodUnitProgressScreenState
     );
   }
 
-  Map<String, dynamic> mapOf(
-    dynamic value,
-  ) {
+  Map<String, dynamic> mapOf(dynamic value) {
     if (value is Map) {
-      return Map<String, dynamic>.from(
-        value,
-      );
+      return Map<String, dynamic>.from(value);
     }
 
     return <String, dynamic>{};
   }
 
-  List<dynamic> listOf(
-    dynamic value,
-  ) {
+  List<dynamic> listOf(dynamic value) {
     if (value is List) {
       return value;
     }
@@ -924,9 +757,7 @@ class _HodUnitProgressScreenState
     return <dynamic>[];
   }
 
-  double toDouble(
-    dynamic value,
-  ) {
+  double toDouble(dynamic value) {
     if (value == null) {
       return 0;
     }
@@ -935,9 +766,6 @@ class _HodUnitProgressScreenState
       return value.toDouble();
     }
 
-    return double.tryParse(
-          value.toString(),
-        ) ??
-        0;
+    return double.tryParse(value.toString()) ?? 0;
   }
 }

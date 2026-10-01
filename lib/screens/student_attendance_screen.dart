@@ -5,17 +5,14 @@ import '../services/local_database_service.dart';
 import 'student_attendance_records_screen.dart';
 
 class StudentAttendanceScreen extends StatefulWidget {
-  const StudentAttendanceScreen({
-    super.key,
-  });
+  const StudentAttendanceScreen({super.key});
 
   @override
   State<StudentAttendanceScreen> createState() =>
       _StudentAttendanceScreenState();
 }
 
-class _StudentAttendanceScreenState
-    extends State<StudentAttendanceScreen> {
+class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
   bool isLoading = true;
   bool usingOfflineCache = false;
 
@@ -42,14 +39,10 @@ class _StudentAttendanceScreenState
       // TRY LARAVEL FIRST
       // =====================================================
 
-      final result =
-          await ApiService.getStudentLogbooks();
+      final result = await ApiService.getStudentLogbooks();
 
       // Cache the latest server copy.
-      await LocalDatabaseService
-          .cacheStudentLogbooks(
-        result,
-      );
+      await LocalDatabaseService.cacheStudentLogbooks(result);
 
       if (!mounted) return;
 
@@ -64,9 +57,7 @@ class _StudentAttendanceScreenState
       // =====================================================
 
       try {
-        final cached =
-            await LocalDatabaseService
-                .getCachedStudentLogbooks();
+        final cached = await LocalDatabaseService.getCachedStudentLogbooks();
 
         if (!mounted) return;
 
@@ -102,85 +93,45 @@ class _StudentAttendanceScreenState
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Attendance',
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: loadLogbooks,
-        child: buildBody(),
-      ),
+      appBar: AppBar(title: const Text('Attendance')),
+      body: RefreshIndicator(onRefresh: loadLogbooks, child: buildBody()),
     );
   }
 
   Widget buildBody() {
     if (isLoading) {
-      return const Center(
-        child:
-            CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (errorMessage != null) {
       return ListView(
-        physics:
-            const AlwaysScrollableScrollPhysics(),
-        padding:
-            const EdgeInsets.all(
-          20,
-        ),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
         children: [
-          const SizedBox(
-            height: 80,
-          ),
+          const SizedBox(height: 80),
 
-          const Icon(
-            Icons.error_outline,
-            size: 60,
-          ),
+          const Icon(Icons.error_outline, size: 60),
 
-          const SizedBox(
-            height: 16,
-          ),
+          const SizedBox(height: 16),
 
           const Text(
             'Unable to load your logbooks.',
-            textAlign:
-                TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight:
-                  FontWeight.bold,
-            ),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
 
-          const SizedBox(
-            height: 12,
-          ),
+          const SizedBox(height: 12),
 
-          Text(
-            errorMessage!,
-            textAlign:
-                TextAlign.center,
-          ),
+          Text(errorMessage!, textAlign: TextAlign.center),
 
-          const SizedBox(
-            height: 20,
-          ),
+          const SizedBox(height: 20),
 
           ElevatedButton.icon(
             onPressed: loadLogbooks,
-            icon: const Icon(
-              Icons.refresh,
-            ),
-            label: const Text(
-              'Try Again',
-            ),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Try Again'),
           ),
         ],
       );
@@ -188,58 +139,35 @@ class _StudentAttendanceScreenState
 
     if (logbooks.isEmpty) {
       return ListView(
-        physics:
-            const AlwaysScrollableScrollPhysics(),
-        padding:
-            const EdgeInsets.all(
-          20,
-        ),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
         children: const [
-          SizedBox(
-            height: 100,
-          ),
+          SizedBox(height: 100),
 
-          Icon(
-            Icons.menu_book_outlined,
-            size: 70,
-          ),
+          Icon(Icons.menu_book_outlined, size: 70),
 
-          SizedBox(
-            height: 16,
-          ),
+          SizedBox(height: 16),
 
           Text(
             'No Logbooks',
-            textAlign:
-                TextAlign.center,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight:
-                  FontWeight.bold,
-            ),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
 
-          SizedBox(
-            height: 8,
-          ),
+          SizedBox(height: 8),
 
           Text(
             'You need an assigned logbook '
             'before recording attendance.',
-            textAlign:
-                TextAlign.center,
+            textAlign: TextAlign.center,
           ),
         ],
       );
     }
 
     return ListView(
-      physics:
-          const AlwaysScrollableScrollPhysics(),
-      padding:
-          const EdgeInsets.all(
-        12,
-      ),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(12),
       children: [
         // ===================================================
         // OFFLINE NOTICE
@@ -247,44 +175,19 @@ class _StudentAttendanceScreenState
 
         if (usingOfflineCache)
           Container(
-            margin:
-                const EdgeInsets.only(
-              bottom: 14,
-            ),
-            padding:
-                const EdgeInsets.all(
-              12,
-            ),
-            decoration:
-                BoxDecoration(
-              color: Colors.orange
-                  .withValues(
-                alpha: 0.10,
-              ),
-              borderRadius:
-                  BorderRadius.circular(
-                10,
-              ),
-              border: Border.all(
-                color: Colors.orange
-                    .withValues(
-                  alpha: 0.35,
-                ),
-              ),
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.35)),
             ),
             child: const Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.offline_bolt,
-                  color:
-                      Colors.orange,
-                ),
+                Icon(Icons.offline_bolt, color: Colors.orange),
 
-                SizedBox(
-                  width: 10,
-                ),
+                SizedBox(width: 10),
 
                 Expanded(
                   child: Text(
@@ -299,139 +202,78 @@ class _StudentAttendanceScreenState
         // ===================================================
         // LOGBOOK LIST
         // ===================================================
+        ...logbooks.map((rawLogbook) {
+          final logbook = Map<String, dynamic>.from(rawLogbook as Map);
 
-        ...logbooks.map(
-          (rawLogbook) {
-            final logbook =
-                Map<String, dynamic>.from(
-              rawLogbook as Map,
-            );
+          final rawId = logbook['id'] ?? logbook['student_logbook_id'];
 
-            final rawId =
-                logbook['id'] ??
-                    logbook[
-                        'student_logbook_id'];
+          final logbookId = int.tryParse(rawId?.toString() ?? '');
 
-            final logbookId =
-                int.tryParse(
-              rawId?.toString() ??
-                  '',
-            );
+          final templateName =
+              logbook['template_name']?.toString() ??
+              logbook['logbook_name']?.toString() ??
+              logbook['unit_name']?.toString() ??
+              'Clinical Logbook';
 
-            final templateName =
-                logbook['template_name']
-                        ?.toString() ??
-                    logbook[
-                            'logbook_name']
-                        ?.toString() ??
-                    logbook['unit_name']
-                        ?.toString() ??
-                    'Clinical Logbook';
+          final unitCode = logbook['unit_code']?.toString() ?? '';
 
-            final unitCode =
-                logbook['unit_code']
-                        ?.toString() ??
-                    '';
+          final unitName = logbook['unit_name']?.toString() ?? '';
 
-            final unitName =
-                logbook['unit_name']
-                        ?.toString() ??
-                    '';
+          final status = logbook['status']?.toString() ?? 'ACTIVE';
 
-            final status =
-                logbook['status']
-                        ?.toString() ??
-                    'ACTIVE';
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.access_time)),
 
-            return Card(
-              margin:
-                  const EdgeInsets.only(
-                bottom: 12,
+              title: Text(
+                templateName,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              child: ListTile(
-                leading:
-                    const CircleAvatar(
-                  child: Icon(
-                    Icons.access_time,
-                  ),
-                ),
 
-                title: Text(
-                  templateName,
-                  style:
-                      const TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-
-                subtitle: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-                  children: [
-                    if (unitCode
-                        .isNotEmpty) ...[
-                      const SizedBox(
-                        height: 4,
-                      ),
-
-                      Text(
-                        unitName
-                                .isNotEmpty
-                            ? 'Unit: $unitCode - $unitName'
-                            : 'Unit: $unitCode',
-                      ),
-                    ],
-
-                    const SizedBox(
-                      height: 4,
-                    ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (unitCode.isNotEmpty) ...[
+                    const SizedBox(height: 4),
 
                     Text(
-                      'Status: $status',
+                      unitName.isNotEmpty
+                          ? 'Unit: $unitCode - $unitName'
+                          : 'Unit: $unitCode',
                     ),
                   ],
-                ),
 
-                trailing:
-                    const Icon(
-                  Icons.chevron_right,
-                ),
+                  const SizedBox(height: 4),
 
-                onTap: () {
-                  if (logbookId ==
-                      null) {
-                    ScaffoldMessenger
-                            .of(context)
-                        .showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Logbook ID is missing.',
-                        ),
-                      ),
-                    );
-
-                    return;
-                  }
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          StudentAttendanceRecordsScreen(
-                        logbookId:
-                            logbookId,
-                        logbookName:
-                            templateName,
-                      ),
-                    ),
-                  );
-                },
+                  Text('Status: $status'),
+                ],
               ),
-            );
-          },
-        ),
+
+              trailing: const Icon(Icons.chevron_right),
+
+              onTap: () {
+                if (logbookId == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Logbook ID is missing.')),
+                  );
+
+                  return;
+                }
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => StudentAttendanceRecordsScreen(
+                      logbookId: logbookId,
+                      logbookName: templateName,
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        }),
       ],
     );
   }

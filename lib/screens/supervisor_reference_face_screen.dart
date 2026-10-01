@@ -59,11 +59,7 @@ class _SupervisorReferenceFaceScreenState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to capture reference face: $e',
-          ),
-        ),
+        SnackBar(content: Text('Unable to capture reference face: $e')),
       );
     } finally {
       if (mounted) {
@@ -81,14 +77,9 @@ class _SupervisorReferenceFaceScreenState
   }
 
   Future<void> uploadReferenceFace() async {
-    if (referenceFaceBytes == null ||
-        referenceFaceBytes!.isEmpty) {
+    if (referenceFaceBytes == null || referenceFaceBytes!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please capture a reference face first.',
-          ),
-        ),
+        const SnackBar(content: Text('Please capture a reference face first.')),
       );
 
       return;
@@ -99,17 +90,14 @@ class _SupervisorReferenceFaceScreenState
     });
 
     try {
-      final result =
-          await ApiService.registerSupervisorReferenceFace(
+      final result = await ApiService.registerSupervisorReferenceFace(
         supervisorId: widget.supervisorId,
         referenceFaceBytes: referenceFaceBytes!,
       );
 
       if (!mounted) return;
 
-      final path =
-          result['supervisor']?['reference_face_path']
-              ?.toString();
+      final path = result['supervisor']?['reference_face_path']?.toString();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -126,11 +114,7 @@ class _SupervisorReferenceFaceScreenState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Reference face upload failed: $e',
-          ),
-        ),
+        SnackBar(content: Text('Reference face upload failed: $e')),
       );
     } finally {
       if (mounted) {
@@ -144,11 +128,7 @@ class _SupervisorReferenceFaceScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Register Reference Face',
-        ),
-      ),
+      appBar: AppBar(title: const Text('Register Reference Face')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -156,35 +136,25 @@ class _SupervisorReferenceFaceScreenState
           children: [
             const Text(
               'Clinical Supervisor',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 8),
 
             Text(
               widget.supervisorName,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 4),
 
-            Text(
-              'Registration: ${widget.registrationNumber}',
-            ),
+            Text('Registration: ${widget.registrationNumber}'),
 
             const SizedBox(height: 24),
 
             const Text(
               'Reference Face',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 8),
@@ -202,15 +172,11 @@ class _SupervisorReferenceFaceScreenState
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   border: Border.all(),
-                  borderRadius:
-                      BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
-                    const Icon(
-                      Icons.face_retouching_natural,
-                      size: 60,
-                    ),
+                    const Icon(Icons.face_retouching_natural, size: 60),
 
                     const SizedBox(height: 12),
 
@@ -222,20 +188,11 @@ class _SupervisorReferenceFaceScreenState
                     const SizedBox(height: 16),
 
                     ElevatedButton.icon(
-                      onPressed:
-                          capturing
-                              ? null
-                              : captureReferenceFace,
-                      icon: const Icon(
-                        Icons.camera_alt_outlined,
-                      ),
+                      onPressed: capturing ? null : captureReferenceFace,
+                      icon: const Icon(Icons.camera_alt_outlined),
                       label: capturing
-                          ? const Text(
-                              'Opening Camera...',
-                            )
-                          : const Text(
-                              'Capture Reference Face',
-                            ),
+                          ? const Text('Opening Camera...')
+                          : const Text('Capture Reference Face'),
                     ),
                   ],
                 ),
@@ -244,8 +201,7 @@ class _SupervisorReferenceFaceScreenState
               Column(
                 children: [
                   ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8),
                     child: Image.memory(
                       referenceFaceBytes!,
                       width: double.infinity,
@@ -260,16 +216,9 @@ class _SupervisorReferenceFaceScreenState
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed:
-                              capturing
-                                  ? null
-                                  : captureReferenceFace,
-                          icon: const Icon(
-                            Icons.camera_alt,
-                          ),
-                          label: const Text(
-                            'Retake',
-                          ),
+                          onPressed: capturing ? null : captureReferenceFace,
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('Retake'),
                         ),
                       ),
 
@@ -277,14 +226,9 @@ class _SupervisorReferenceFaceScreenState
 
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed:
-                              removeReferenceFace,
-                          icon: const Icon(
-                            Icons.delete_outline,
-                          ),
-                          label: const Text(
-                            'Remove',
-                          ),
+                          onPressed: removeReferenceFace,
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('Remove'),
                         ),
                       ),
                     ],
@@ -299,16 +243,12 @@ class _SupervisorReferenceFaceScreenState
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 border: Border.all(),
-                borderRadius:
-                    BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: const Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                  ),
+                  Icon(Icons.info_outline),
 
                   SizedBox(width: 12),
 
@@ -328,25 +268,15 @@ class _SupervisorReferenceFaceScreenState
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed:
-                    uploading
-                        ? null
-                        : uploadReferenceFace,
-                icon: const Icon(
-                  Icons.cloud_upload_outlined,
-                ),
+                onPressed: uploading ? null : uploadReferenceFace,
+                icon: const Icon(Icons.cloud_upload_outlined),
                 label: uploading
                     ? const SizedBox(
                         width: 22,
                         height: 22,
-                        child:
-                            CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text(
-                        'Register Reference Face',
-                      ),
+                    : const Text('Register Reference Face'),
               ),
             ),
           ],

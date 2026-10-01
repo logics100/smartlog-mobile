@@ -24,9 +24,9 @@ class SupervisorVerificationScreen extends StatefulWidget {
     required this.procedureName,
     this.facilityName,
   }) : assert(
-          entryId != null || attendanceId != null,
-          'Either entryId or attendanceId must be provided.',
-        );
+         entryId != null || attendanceId != null,
+         'Either entryId or attendanceId must be provided.',
+       );
 
   @override
   State<SupervisorVerificationScreen> createState() =>
@@ -55,6 +55,7 @@ class _SupervisorVerificationScreenState
   bool searching = false;
   bool submitting = false;
   bool capturingFace = false;
+  bool useGuestSupervisor = false;
 
   Timer? searchDebounce;
 
@@ -84,12 +85,9 @@ class _SupervisorVerificationScreenState
       return;
     }
 
-    searchDebounce = Timer(
-      const Duration(milliseconds: 500),
-      () {
-        searchSupervisors(search);
-      },
-    );
+    searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      searchSupervisors(search);
+    });
   }
 
   Future<void> searchSupervisors(String search) async {
@@ -102,10 +100,7 @@ class _SupervisorVerificationScreenState
     });
 
     try {
-      final results =
-          await ApiService.searchClinicalSupervisors(
-        search.trim(),
-      );
+      final results = await ApiService.searchClinicalSupervisors(search.trim());
 
       if (!mounted) return;
 
@@ -116,11 +111,7 @@ class _SupervisorVerificationScreenState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to search supervisors: $e',
-          ),
-        ),
+        SnackBar(content: Text('Unable to search supervisors: $e')),
       );
     } finally {
       if (mounted) {
@@ -131,22 +122,17 @@ class _SupervisorVerificationScreenState
     }
   }
 
-  void selectSupervisor(
-    Map<String, dynamic> supervisor,
-  ) {
+  void selectSupervisor(Map<String, dynamic> supervisor) {
     setState(() {
       selectedSupervisor = supervisor;
 
-      supervisorController.text =
-          supervisor['full_name']?.toString() ?? '';
+      supervisorController.text = supervisor['full_name']?.toString() ?? '';
 
-      facilityController.text =
-          supervisor['facility_name']?.toString() ?? '';
+      facilityController.text = supervisor['facility_name']?.toString() ?? '';
 
       supervisorResults = [];
 
-      searchController.text =
-          supervisor['full_name']?.toString() ?? '';
+      searchController.text = supervisor['full_name']?.toString() ?? '';
     });
 
     FocusScope.of(context).unfocus();
@@ -162,8 +148,7 @@ class _SupervisorVerificationScreenState
 
       supervisorResults = [];
 
-      facilityController.text =
-          widget.facilityName ?? '';
+      facilityController.text = widget.facilityName ?? '';
     });
   }
 
@@ -174,20 +159,16 @@ class _SupervisorVerificationScreenState
   Future<Uint8List?> captureSignature() async {
     try {
       final boundary =
-          signatureBoundaryKey.currentContext
-              ?.findRenderObject() as RenderRepaintBoundary?;
+          signatureBoundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
 
       if (boundary == null) {
         return null;
       }
 
-      final image = await boundary.toImage(
-        pixelRatio: 3.0,
-      );
+      final image = await boundary.toImage(pixelRatio: 3.0);
 
-      final byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData == null) {
         return null;
@@ -213,11 +194,9 @@ class _SupervisorVerificationScreenState
     });
 
     try {
-      final XFile? image =
-          await imagePicker.pickImage(
+      final XFile? image = await imagePicker.pickImage(
         source: ImageSource.camera,
-        preferredCameraDevice:
-            CameraDevice.front,
+        preferredCameraDevice: CameraDevice.front,
         imageQuality: 85,
         maxWidth: 1280,
       );
@@ -237,11 +216,7 @@ class _SupervisorVerificationScreenState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to capture face image: $e',
-          ),
-        ),
+        SnackBar(content: Text('Unable to capture face image: $e')),
       );
     } finally {
       if (mounted) {
@@ -263,83 +238,61 @@ class _SupervisorVerificationScreenState
   // ---------------------------------------------------------------------------
 
   Future<void> submitVerification() async {
-    if (selectedSupervisor == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please select a registered supervisor.',
-          ),
-        ),
-      );
+    int? supervisorId;
 
-      return;
+    if (!useGuestSupervisor) {
+      if (selectedSupervisor == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a registered supervisor.'),
+          ),
+        );
+        return;
+      }
+
+      supervisorId = int.tryParse(selectedSupervisor!['id'].toString());
+
+      if (supervisorId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid supervisor selected.')),
+        );
+        return;
+      }
     }
 
-    final supervisorId = int.tryParse(
-      selectedSupervisor!['id'].toString(),
-    );
-
-    if (supervisorId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Invalid supervisor selected.',
-          ),
-        ),
-      );
-
-      return;
-    }
-
-    final supervisorName =
-        supervisorController.text.trim();
+    final supervisorName = supervisorController.text.trim();
 
     if (supervisorName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Supervisor name is missing.',
-          ),
-        ),
+        const SnackBar(content: Text('Supervisor name is missing.')),
       );
 
       return;
     }
 
-    final signatureState =
-        signaturePadKey.currentState;
+    final signatureState = signaturePadKey.currentState;
 
-    if (signatureState == null ||
-        !signatureState.hasSignature) {
+    if (signatureState == null || !signatureState.hasSignature) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Supervisor signature is required.')),
+      );
+
+      return;
+    }
+
+    if (faceBytes == null || faceBytes!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Supervisor signature is required.',
-          ),
+          content: Text('Please capture the supervisor face image.'),
         ),
       );
 
       return;
     }
 
-    if (faceBytes == null ||
-        faceBytes!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please capture the supervisor face image.',
-          ),
-        ),
-      );
+    final signatureBytes = await captureSignature();
 
-      return;
-    }
-
-    final signatureBytes =
-        await captureSignature();
-
-    if (signatureBytes == null ||
-        signatureBytes.isEmpty) {
+    if (signatureBytes == null || signatureBytes.isEmpty) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -361,68 +314,53 @@ class _SupervisorVerificationScreenState
     try {
       late final Map<String, dynamic> result;
 
-if (widget.attendanceId != null) {
-  result =
-      await ApiService.verifyStudentAttendance(
-    attendanceId: widget.attendanceId!,
-    clinicalSupervisorId: supervisorId,
-    supervisorName: supervisorName,
-    facilityName:
-        facilityController.text.trim().isEmpty
-            ? null
-            : facilityController.text.trim(),
-    signatureBytes: signatureBytes,
-    faceBytes: faceBytes,
-  );
-} else {
-  result =
-      await ApiService.verifyClinicalEntry(
-    entryId: widget.entryId!,
-    clinicalSupervisorId: supervisorId,
-    supervisorName: supervisorName,
-    facilityName:
-        facilityController.text.trim().isEmpty
-            ? null
-            : facilityController.text.trim(),
-    signatureBytes: signatureBytes,
-    faceBytes: faceBytes,
-  );
-}
+      if (widget.attendanceId != null) {
+        result = await ApiService.verifyStudentAttendance(
+          attendanceId: widget.attendanceId!,
+          clinicalSupervisorId: supervisorId,
+          supervisorName: supervisorName,
+          facilityName: facilityController.text.trim().isEmpty
+              ? null
+              : facilityController.text.trim(),
+          signatureBytes: signatureBytes,
+          faceBytes: faceBytes,
+        );
+      } else {
+        result = await ApiService.verifyClinicalEntry(
+          entryId: widget.entryId!,
+          clinicalSupervisorId: supervisorId,
+          supervisorName: supervisorName,
+          facilityName: facilityController.text.trim().isEmpty
+              ? null
+              : facilityController.text.trim(),
+          signatureBytes: signatureBytes,
+          faceBytes: faceBytes,
+        );
+      }
 
       if (!mounted) return;
 
       final verificationStatus =
-          result['verification_status']
-                  ?.toString() ??
-              'MANUAL_REVIEW';
+          result['verification_status']?.toString() ?? 'MANUAL_REVIEW';
 
-      final faceComparison =
-          result['face_comparison'];
+      final faceComparison = result['face_comparison'];
 
-      String comparisonDecision =
-          'NOT_AVAILABLE';
+      String comparisonDecision = 'NOT_AVAILABLE';
 
       String distanceText = 'N/A';
 
       if (faceComparison is Map) {
         comparisonDecision =
-            faceComparison[
-                        'comparison_decision']
-                    ?.toString() ??
-                'NOT_AVAILABLE';
+            faceComparison['comparison_decision']?.toString() ??
+            'NOT_AVAILABLE';
 
-        final distance =
-            faceComparison['lbph_distance'];
+        final distance = faceComparison['lbph_distance'];
 
         if (distance != null) {
-          final parsedDistance =
-              double.tryParse(
-            distance.toString(),
-          );
+          final parsedDistance = double.tryParse(distance.toString());
 
           if (parsedDistance != null) {
-            distanceText =
-                parsedDistance.toStringAsFixed(4);
+            distanceText = parsedDistance.toStringAsFixed(4);
           }
         }
       }
@@ -467,30 +405,19 @@ if (widget.attendanceId != null) {
           return AlertDialog(
             title: const Row(
               children: [
-                Icon(
-                  Icons.fact_check_outlined,
-                ),
+                Icon(Icons.fact_check_outlined),
                 SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Verification Submitted',
-                  ),
-                ),
+                Expanded(child: Text('Verification Submitted')),
               ],
             ),
             content: SingleChildScrollView(
               child: Column(
-                mainAxisSize:
-                    MainAxisSize.min,
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     'Face Comparison',
-                    style: TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 6),
@@ -499,16 +426,13 @@ if (widget.attendanceId != null) {
                     comparisonDecision,
                     style: const TextStyle(
                       fontSize: 17,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
-                  Text(
-                    comparisonMessage,
-                  ),
+                  Text(comparisonMessage),
 
                   const SizedBox(height: 16),
 
@@ -525,10 +449,7 @@ if (widget.attendanceId != null) {
 
                   const Text(
                     'Verification Status',
-                    style: TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 6),
@@ -537,8 +458,7 @@ if (widget.attendanceId != null) {
                     verificationStatus,
                     style: const TextStyle(
                       fontSize: 17,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
@@ -556,9 +476,7 @@ if (widget.attendanceId != null) {
             actions: [
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(
-                    dialogContext,
-                  ).pop();
+                  Navigator.of(dialogContext).pop();
                 },
                 child: const Text('OK'),
               ),
@@ -569,20 +487,12 @@ if (widget.attendanceId != null) {
 
       if (!mounted) return;
 
-      Navigator.pop(
-        context,
-        true,
-      );
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Verification failed: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Verification failed: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -614,16 +524,11 @@ if (widget.attendanceId != null) {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Supervisor Verification',
-        ),
-      ),
+      appBar: AppBar(title: const Text('Supervisor Verification')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ---------------------------------------------------------------
             // Clinical Activity
@@ -631,331 +536,300 @@ if (widget.attendanceId != null) {
 
             const Text(
               'Clinical Activity',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 8),
 
             Text(
               widget.procedureName,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 24),
 
             // ---------------------------------------------------------------
-            // Registered Supervisor
+            // Supervisor Type
             // ---------------------------------------------------------------
-
             const Text(
-              'Registered Supervisor',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              'Supervisor Type',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
 
-            const Text(
-              'Search and select the supervisor '
-              'who is verifying this activity.',
-            ),
-
-            const SizedBox(height: 12),
-
-            if (selectedSupervisor == null) ...[
-              TextField(
-                controller: searchController,
-                onChanged: onSearchChanged,
-                decoration: InputDecoration(
-                  labelText:
-                      'Search Supervisor',
-                  hintText:
-                      'Name or registration number',
-                  prefixIcon: const Icon(
-                    Icons.search,
-                  ),
-                  suffixIcon: searching
-                      ? const Padding(
-                          padding:
-                              EdgeInsets.all(
-                            14,
-                          ),
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : null,
-                  border:
-                      const OutlineInputBorder(),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment<bool>(
+                  value: false,
+                  icon: Icon(Icons.verified_user_outlined),
+                  label: Text('Registered'),
                 ),
-              ),
-
-              if (supervisorResults.isNotEmpty) ...[
-                const SizedBox(height: 8),
-
-                Container(
-                  width: double.infinity,
-                  constraints:
-                      const BoxConstraints(
-                    maxHeight: 300,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(),
-                    borderRadius:
-                        BorderRadius.circular(
-                      8,
-                    ),
-                  ),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount:
-                        supervisorResults.length,
-                    separatorBuilder:
-                        (context, index) =>
-                            const Divider(
-                      height: 1,
-                    ),
-                    itemBuilder:
-                        (context, index) {
-                      final supervisor =
-                          Map<String, dynamic>.from(
-                        supervisorResults[
-                            index],
-                      );
-
-                      final name =
-                          supervisor['full_name']
-                                  ?.toString() ??
-                              'Unknown Supervisor';
-
-                      final registration =
-                          supervisor[
-                                      'registration_number']
-                                  ?.toString() ??
-                              'No registration number';
-
-                      final profession =
-                          supervisor['profession']
-                                  ?.toString() ??
-                              '';
-
-                      final facility =
-                          supervisor[
-                                      'facility_name']
-                                  ?.toString() ??
-                              '';
-
-                      return ListTile(
-                        leading:
-                            const CircleAvatar(
-                          child: Icon(
-                            Icons.person_outline,
-                          ),
-                        ),
-                        title: Text(name),
-                        subtitle: Text(
-                          [
-                            if (profession
-                                .isNotEmpty)
-                              profession,
-                            registration,
-                            if (facility
-                                .isNotEmpty)
-                              facility,
-                          ].join('\n'),
-                        ),
-                        isThreeLine: true,
-                        trailing: const Icon(
-                          Icons.chevron_right,
-                        ),
-                        onTap: () {
-                          selectSupervisor(
-                            supervisor,
-                          );
-                        },
-                      );
-                    },
-                  ),
+                ButtonSegment<bool>(
+                  value: true,
+                  icon: Icon(Icons.person_add_alt_1_outlined),
+                  label: Text('Other Supervisor'),
                 ),
               ],
-            ] else ...[
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(),
-                  borderRadius:
-                      BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.verified_user,
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child: Text(
-                            selectedSupervisor![
-                                        'full_name']
-                                    ?.toString() ??
-                                '',
-                            style:
-                                const TextStyle(
-                              fontSize: 17,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-                      'Registration: '
-                      '${selectedSupervisor!['registration_number'] ?? 'N/A'}',
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      'Profession: '
-                      '${selectedSupervisor!['profession'] ?? 'N/A'}',
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      'Facility: '
-                      '${selectedSupervisor!['facility_name'] ?? 'N/A'}',
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child:
-                              OutlinedButton.icon(
-                            onPressed:
-                                changeSupervisor,
-                            icon: const Icon(
-                              Icons.swap_horiz,
-                            ),
-                            label: const Text(
-                              'Change Supervisor',
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child:
-                              ElevatedButton.icon(
-                            onPressed: () async {
-                              final supervisorId =
-                                  int.parse(
-                                selectedSupervisor![
-                                        'id']
-                                    .toString(),
-                              );
-
-                              final supervisorName =
-                                  selectedSupervisor![
-                                              'full_name']
-                                          ?.toString() ??
-                                      '';
-
-                              final registrationNumber =
-                                  selectedSupervisor![
-                                              'registration_number']
-                                          ?.toString() ??
-                                      '';
-
-                              final result =
-                                  await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      SupervisorReferenceFaceScreen(
-                                    supervisorId:
-                                        supervisorId,
-                                    supervisorName:
-                                        supervisorName,
-                                    registrationNumber:
-                                        registrationNumber,
-                                  ),
-                                ),
-                              );
-
-                              if (!context.mounted) {
-                                return;
-                              }
-
-                              if (result == true) {
-                                ScaffoldMessenger.of(
-                                  context,
-                                ).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Reference face registered successfully.',
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            icon: const Icon(
-                              Icons
-                                  .face_retouching_natural,
-                            ),
-                            label: const Text(
-                              'Reference Face',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              selected: {useGuestSupervisor},
+              onSelectionChanged: (selection) {
+                final guest = selection.first;
+                setState(() {
+                  useGuestSupervisor = guest;
+                  selectedSupervisor = null;
+                  supervisorResults = [];
+                  searchController.clear();
+                  supervisorController.clear();
+                  facilityController.text = widget.facilityName ?? '';
+                  faceBytes = null;
+                });
+              },
+            ),
 
             const SizedBox(height: 20),
 
             // ---------------------------------------------------------------
+            // Registered Supervisor / Guest Supervisor
+            // ---------------------------------------------------------------
+            if (!useGuestSupervisor) ...[
+              const Text(
+                'Registered Supervisor',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 6),
+
+              const Text(
+                'Search and select the supervisor '
+                'who is verifying this activity.',
+              ),
+
+              const SizedBox(height: 12),
+
+              if (selectedSupervisor == null) ...[
+                TextField(
+                  controller: searchController,
+                  onChanged: onSearchChanged,
+                  decoration: InputDecoration(
+                    labelText: 'Search Supervisor',
+                    hintText: 'Name or registration number',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: searching
+                        ? const Padding(
+                            padding: EdgeInsets.all(14),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : null,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+
+                if (supervisorResults.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+
+                  Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    decoration: BoxDecoration(
+                      border: Border.all(),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: supervisorResults.length,
+                      separatorBuilder: (context, index) =>
+                          const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final supervisor = Map<String, dynamic>.from(
+                          supervisorResults[index],
+                        );
+
+                        final name =
+                            supervisor['full_name']?.toString() ??
+                            'Unknown Supervisor';
+
+                        final registration =
+                            supervisor['registration_number']?.toString() ??
+                            'No registration number';
+
+                        final profession =
+                            supervisor['profession']?.toString() ?? '';
+
+                        final facility =
+                            supervisor['facility_name']?.toString() ?? '';
+
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.person_outline),
+                          ),
+                          title: Text(name),
+                          subtitle: Text(
+                            [
+                              if (profession.isNotEmpty) profession,
+                              registration,
+                              if (facility.isNotEmpty) facility,
+                            ].join('\n'),
+                          ),
+                          isThreeLine: true,
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            selectSupervisor(supervisor);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ] else ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.verified_user),
+
+                          const SizedBox(width: 12),
+
+                          Expanded(
+                            child: Text(
+                              selectedSupervisor!['full_name']?.toString() ??
+                                  '',
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Text(
+                        'Registration: '
+                        '${selectedSupervisor!['registration_number'] ?? 'N/A'}',
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        'Profession: '
+                        '${selectedSupervisor!['profession'] ?? 'N/A'}',
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        'Facility: '
+                        '${selectedSupervisor!['facility_name'] ?? 'N/A'}',
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: changeSupervisor,
+                              icon: const Icon(Icons.swap_horiz),
+                              label: const Text('Change Supervisor'),
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final supervisorId = int.parse(
+                                  selectedSupervisor!['id'].toString(),
+                                );
+
+                                final supervisorName =
+                                    selectedSupervisor!['full_name']
+                                        ?.toString() ??
+                                    '';
+
+                                final registrationNumber =
+                                    selectedSupervisor!['registration_number']
+                                        ?.toString() ??
+                                    '';
+
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        SupervisorReferenceFaceScreen(
+                                          supervisorId: supervisorId,
+                                          supervisorName: supervisorName,
+                                          registrationNumber:
+                                              registrationNumber,
+                                        ),
+                                  ),
+                                );
+
+                                if (!context.mounted) {
+                                  return;
+                                }
+
+                                if (result == true) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Reference face registered successfully.',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.face_retouching_natural),
+                              label: const Text('Reference Face'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 20),
+            ] else ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  border: Border.all(),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Use this option when the supervisor is not registered in SmartLog. '
+                  'Enter the supervisor name and facility below. Their signature and '
+                  'face photo will be stored for lecturer review.',
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            // ---------------------------------------------------------------
             // Supervisor Name
             // ---------------------------------------------------------------
-
             TextField(
-              controller:
-                  supervisorController,
-              readOnly: true,
-              decoration:
-                  const InputDecoration(
-                labelText:
-                    'Supervisor Name',
-                prefixIcon: Icon(
-                  Icons.person_outline,
-                ),
-                border:
-                    OutlineInputBorder(),
+              controller: supervisorController,
+              readOnly: !useGuestSupervisor,
+              decoration: InputDecoration(
+                labelText: useGuestSupervisor
+                    ? 'Other Supervisor Full Name'
+                    : 'Supervisor Name',
+                prefixIcon: Icon(Icons.person_outline),
+                border: OutlineInputBorder(),
               ),
             ),
 
@@ -964,21 +838,13 @@ if (widget.attendanceId != null) {
             // ---------------------------------------------------------------
             // Facility
             // ---------------------------------------------------------------
-
             TextField(
-              controller:
-                  facilityController,
-              readOnly:
-                  selectedSupervisor != null,
-              decoration:
-                  const InputDecoration(
+              controller: facilityController,
+              readOnly: !useGuestSupervisor && selectedSupervisor != null,
+              decoration: const InputDecoration(
                 labelText: 'Facility',
-                prefixIcon: Icon(
-                  Icons
-                      .local_hospital_outlined,
-                ),
-                border:
-                    OutlineInputBorder(),
+                prefixIcon: Icon(Icons.local_hospital_outlined),
+                border: OutlineInputBorder(),
               ),
             ),
 
@@ -987,35 +853,26 @@ if (widget.attendanceId != null) {
             // ---------------------------------------------------------------
             // Signature
             // ---------------------------------------------------------------
-
             const Text(
               'Supervisor Signature',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 8),
 
             SignaturePad(
               key: signaturePadKey,
-              signatureKey:
-                  signatureBoundaryKey,
+              signatureKey: signatureBoundaryKey,
             ),
 
             const SizedBox(height: 8),
 
             Align(
-              alignment:
-                  Alignment.centerRight,
+              alignment: Alignment.centerRight,
               child: TextButton.icon(
                 onPressed: clearSignature,
-                icon: const Icon(
-                  Icons.delete_outline,
-                ),
-                label: const Text(
-                  'Clear Signature',
-                ),
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Clear Signature'),
               ),
             ),
 
@@ -1024,12 +881,9 @@ if (widget.attendanceId != null) {
             // ---------------------------------------------------------------
             // Face Capture
             // ---------------------------------------------------------------
-
             const Text(
               'Supervisor Face Capture',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 8),
@@ -1037,23 +891,14 @@ if (widget.attendanceId != null) {
             if (faceBytes == null)
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.all(
-                  20,
-                ),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   border: Border.all(),
-                  borderRadius:
-                      BorderRadius.circular(
-                    8,
-                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
-                    const Icon(
-                      Icons.face_outlined,
-                      size: 50,
-                    ),
+                    const Icon(Icons.face_outlined, size: 50),
 
                     const SizedBox(height: 12),
 
@@ -1061,28 +906,17 @@ if (widget.attendanceId != null) {
                       'Capture the supervisor '
                       'face using the front '
                       'camera.',
-                      textAlign:
-                          TextAlign.center,
+                      textAlign: TextAlign.center,
                     ),
 
                     const SizedBox(height: 16),
 
                     ElevatedButton.icon(
-                      onPressed:
-                          capturingFace
-                              ? null
-                              : captureFace,
-                      icon: const Icon(
-                        Icons
-                            .camera_alt_outlined,
-                      ),
+                      onPressed: capturingFace ? null : captureFace,
+                      icon: const Icon(Icons.camera_alt_outlined),
                       label: capturingFace
-                          ? const Text(
-                              'Opening Camera...',
-                            )
-                          : const Text(
-                              'Capture Face',
-                            ),
+                          ? const Text('Opening Camera...')
+                          : const Text('Capture Face'),
                     ),
                   ],
                 ),
@@ -1091,10 +925,7 @@ if (widget.attendanceId != null) {
               Column(
                 children: [
                   ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(
-                      8,
-                    ),
+                    borderRadius: BorderRadius.circular(8),
                     child: Image.memory(
                       faceBytes!,
                       width: double.infinity,
@@ -1108,34 +939,20 @@ if (widget.attendanceId != null) {
                   Row(
                     children: [
                       Expanded(
-                        child:
-                            OutlinedButton.icon(
-                          onPressed:
-                              capturingFace
-                                  ? null
-                                  : captureFace,
-                          icon: const Icon(
-                            Icons.camera_alt,
-                          ),
-                          label: const Text(
-                            'Retake',
-                          ),
+                        child: OutlinedButton.icon(
+                          onPressed: capturingFace ? null : captureFace,
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('Retake'),
                         ),
                       ),
 
                       const SizedBox(width: 12),
 
                       Expanded(
-                        child:
-                            OutlinedButton.icon(
-                          onPressed:
-                              removeFaceCapture,
-                          icon: const Icon(
-                            Icons.delete_outline,
-                          ),
-                          label: const Text(
-                            'Remove',
-                          ),
+                        child: OutlinedButton.icon(
+                          onPressed: removeFaceCapture,
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('Remove'),
                         ),
                       ),
                     ],
@@ -1148,40 +965,29 @@ if (widget.attendanceId != null) {
             // ---------------------------------------------------------------
             // Information
             // ---------------------------------------------------------------
-
             Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 border: Border.all(),
-                borderRadius:
-                    BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                  ),
-
-                  SizedBox(width: 12),
-
+                  const Icon(Icons.info_outline),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'The selected registered '
-                      'supervisor, signature and '
-                      'face photo will be stored '
-                      'with this verification. '
-                      'The captured face will be '
-                      'automatically compared '
-                      'with the registered '
-                      'supervisor reference face. '
-                      'The result is supporting '
-                      'evidence only and the '
-                      'verification remains under '
-                      'manual review.',
+                      useGuestSupervisor
+                          ? 'This supervisor is not registered in SmartLog. Their name, '
+                                'facility, signature and face photo will be stored as evidence. '
+                                'No reference-face comparison is available, so the verification '
+                                'remains under manual lecturer review.'
+                          : 'The selected registered supervisor, signature and face photo '
+                                'will be stored with this verification. The captured face may be '
+                                'compared with the registered reference face. The result is '
+                                'supporting evidence only and remains under manual review.',
                     ),
                   ),
                 ],
@@ -1193,31 +999,19 @@ if (widget.attendanceId != null) {
             // ---------------------------------------------------------------
             // Submit
             // ---------------------------------------------------------------
-
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed:
-                    submitting
-                        ? null
-                        : submitVerification,
-                icon: const Icon(
-                  Icons
-                      .verified_user_outlined,
-                ),
+                onPressed: submitting ? null : submitVerification,
+                icon: const Icon(Icons.verified_user_outlined),
                 label: submitting
                     ? const SizedBox(
                         width: 22,
                         height: 22,
-                        child:
-                            CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text(
-                        'Submit Verification',
-                      ),
+                    : const Text('Submit Verification'),
               ),
             ),
           ],

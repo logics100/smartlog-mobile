@@ -39,8 +39,7 @@ class _LecturerClinicalEntryDetailScreenState
     });
 
     try {
-      final result =
-          await ApiService.getLecturerClinicalEntryDetails(
+      final result = await ApiService.getLecturerClinicalEntryDetails(
         unitId: widget.unitId,
         studentId: widget.studentId,
         entryId: widget.entryId,
@@ -62,18 +61,13 @@ class _LecturerClinicalEntryDetailScreenState
     }
   }
 
-  void openFullScreenImage({
-    required String imageUrl,
-    required String title,
-  }) {
+  void openFullScreenImage({required String imageUrl, required String title}) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => Scaffold(
           backgroundColor: Colors.black,
-          appBar: AppBar(
-            title: Text(title),
-          ),
+          appBar: AppBar(title: Text(title)),
           body: Center(
             child: InteractiveViewer(
               minScale: 0.5,
@@ -83,33 +77,22 @@ class _LecturerClinicalEntryDetailScreenState
               child: Image.network(
                 imageUrl,
                 fit: BoxFit.contain,
-                loadingBuilder: (
-                  context,
-                  child,
-                  loadingProgress,
-                ) {
+                loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) {
                     return child;
                   }
 
                   return const SizedBox(
                     height: 250,
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                    child: Center(child: CircularProgressIndicator()),
                   );
                 },
-                errorBuilder: (
-                  context,
-                  error,
-                  stackTrace,
-                ) {
+                errorBuilder: (context, error, stackTrace) {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(20),
                       child: Column(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.broken_image_outlined,
@@ -120,10 +103,7 @@ class _LecturerClinicalEntryDetailScreenState
                           Text(
                             'Unable to load image.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
+                            style: TextStyle(color: Colors.white, fontSize: 16),
                           ),
                         ],
                       ),
@@ -141,23 +121,14 @@ class _LecturerClinicalEntryDetailScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Clinical Entry Details',
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: loadEntry,
-        child: buildBody(),
-      ),
+      appBar: AppBar(title: const Text('Clinical Entry Details')),
+      body: RefreshIndicator(onRefresh: loadEntry, child: buildBody()),
     );
   }
 
   Widget buildBody() {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (errorMessage != null) {
@@ -166,45 +137,28 @@ class _LecturerClinicalEntryDetailScreenState
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 80),
-          const Icon(
-            Icons.error_outline,
-            size: 60,
-          ),
+          const Icon(Icons.error_outline, size: 60),
           const SizedBox(height: 16),
           const Text(
             'Unable to load clinical entry.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          Text(
-            errorMessage!,
-            textAlign: TextAlign.center,
-          ),
+          Text(errorMessage!, textAlign: TextAlign.center),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: loadEntry,
-            child: const Text(
-              'Try Again',
-            ),
-          ),
+          ElevatedButton(onPressed: loadEntry, child: const Text('Try Again')),
         ],
       );
     }
 
     final responseData = data ?? {};
 
-    final entry =
-        responseData['entry'] as Map<String, dynamic>? ?? {};
+    final entry = responseData['entry'] as Map<String, dynamic>? ?? {};
 
-    final verifications =
-        responseData['verifications'] as List<dynamic>? ?? [];
+    final verifications = responseData['verifications'] as List<dynamic>? ?? [];
 
-    final notice =
-        responseData['notice']?.toString();
+    final notice = responseData['notice']?.toString();
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -212,10 +166,7 @@ class _LecturerClinicalEntryDetailScreenState
       children: [
         const Text(
           'Clinical Activity',
-          style: TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 8),
@@ -224,38 +175,19 @@ class _LecturerClinicalEntryDetailScreenState
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                buildDetailRow(
-                  'Student',
-                  entry['student_name'],
-                ),
-                buildDetailRow(
-                  'DWU ID',
-                  entry['student_dwu_id'],
-                ),
+                buildDetailRow('Student', entry['student_name']),
+                buildDetailRow('DWU ID', entry['student_dwu_id']),
                 buildDetailRow(
                   'Unit',
                   '${entry['unit_code'] ?? '-'} - '
-                  '${entry['unit_name'] ?? '-'}',
+                      '${entry['unit_name'] ?? '-'}',
                 ),
-                buildDetailRow(
-                  'Activity Date',
-                  entry['activity_date'],
-                ),
-                buildDetailRow(
-                  'Facility',
-                  entry['facility_name'],
-                ),
-                buildDetailRow(
-                  'Activity Details',
-                  entry['activity_details'],
-                ),
-                buildDetailRow(
-                  'Status',
-                  entry['status'],
-                ),
+                buildDetailRow('Activity Date', entry['activity_date']),
+                buildDetailRow('Facility', entry['facility_name']),
+                buildDetailRow('Activity Details', entry['activity_details']),
+                buildDetailRow('Status', entry['status']),
               ],
             ),
           ),
@@ -265,10 +197,7 @@ class _LecturerClinicalEntryDetailScreenState
 
         Text(
           'Supervisor Verifications (${verifications.length})',
-          style: const TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 8),
@@ -283,355 +212,258 @@ class _LecturerClinicalEntryDetailScreenState
             ),
           ),
 
-        ...verifications.map(
-          (verificationData) {
-            final verification =
-                Map<String, dynamic>.from(
-              verificationData as Map,
-            );
+        ...verifications.map((verificationData) {
+          final verification = Map<String, dynamic>.from(
+            verificationData as Map,
+          );
 
-            final signatureUrl =
-                verification['signature_url']?.toString();
+          final signatureUrl = verification['signature_url']?.toString();
 
-            final faceCaptureUrl =
-                verification['face_capture_url']?.toString();
+          final faceCaptureUrl = verification['face_capture_url']?.toString();
 
-            final verificationStatus =
-                verification['verification_status']
-                        ?.toString() ??
-                    'UNKNOWN';
+          final verificationStatus =
+              verification['verification_status']?.toString() ?? 'UNKNOWN';
 
-            final faceComparisonDecision =
-                verification['face_comparison_decision']
-                        ?.toString() ??
-                    'NOT_AVAILABLE';
+          final faceComparisonDecision =
+              verification['face_comparison_decision']?.toString() ??
+              'NOT_AVAILABLE';
 
-            final reviewerName =
-                verification['reviewer_name']?.toString();
+          final reviewerName = verification['reviewer_name']?.toString();
 
-            final reviewerDwuId =
-                verification['reviewer_dwu_id']?.toString();
+          final reviewerDwuId = verification['reviewer_dwu_id']?.toString();
 
-            final reviewedAt =
-                verification['reviewed_at']?.toString();
+          final reviewedAt = verification['reviewed_at']?.toString();
 
-            final reviewComment =
-                verification['review_comment']?.toString();
+          final reviewComment = verification['review_comment']?.toString();
 
-            final hasReviewInformation =
-                (reviewerName != null &&
-                        reviewerName.trim().isNotEmpty) ||
-                    (reviewerDwuId != null &&
-                        reviewerDwuId.trim().isNotEmpty) ||
-                    (reviewedAt != null &&
-                        reviewedAt.trim().isNotEmpty) ||
-                    (reviewComment != null &&
-                        reviewComment.trim().isNotEmpty);
+          final hasReviewInformation =
+              (reviewerName != null && reviewerName.trim().isNotEmpty) ||
+              (reviewerDwuId != null && reviewerDwuId.trim().isNotEmpty) ||
+              (reviewedAt != null && reviewedAt.trim().isNotEmpty) ||
+              (reviewComment != null && reviewComment.trim().isNotEmpty);
 
-            return Card(
-              margin: const EdgeInsets.only(
-                bottom: 16,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            verification[
-                                        'supervisor_name']
-                                    ?.toString() ??
-                                'Supervisor',
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
+          return Card(
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          verification['supervisor_name']?.toString() ??
+                              'Supervisor',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        buildVerificationStatusBadge(
-                          verificationStatus,
+                      ),
+                      const SizedBox(width: 8),
+                      buildVerificationStatusBadge(verificationStatus),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  buildDetailRow('Profession', verification['profession']),
+
+                  buildDetailRow(
+                    'Registration Number',
+                    verification['registration_number'],
+                  ),
+
+                  buildDetailRow(
+                    'Supervisor Facility',
+                    verification['supervisor_facility'],
+                  ),
+
+                  buildDetailRow(
+                    'Verification Method',
+                    verification['verification_method'],
+                  ),
+
+                  buildDetailRow(
+                    'Verification Time',
+                    verification['verification_timestamp'],
+                  ),
+
+                  const Divider(height: 28),
+
+                  const Text(
+                    'Face Comparison',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  const Text(
+                    'Comparison Result',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+
+                  const SizedBox(height: 7),
+
+                  buildFaceComparisonBadge(faceComparisonDecision),
+
+                  const SizedBox(height: 12),
+
+                  buildDetailRow(
+                    'LBPH Distance',
+                    verification['face_lbph_distance'],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  const Text(
+                    'Face comparison is supporting evidence only.',
+                    style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
+                  ),
+
+                  if (signatureUrl != null && signatureUrl.isNotEmpty) ...[
+                    const Divider(height: 30),
+
+                    const Row(
+                      children: [
+                        Icon(Icons.draw_outlined),
+                        SizedBox(width: 8),
+                        Text(
+                          'Supervisor Signature',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    buildEvidenceImage(
+                      imageUrl: signatureUrl,
+                      evidenceName: 'Supervisor Signature',
+                      height: 180,
+                    ),
+                  ],
+
+                  if (faceCaptureUrl != null && faceCaptureUrl.isNotEmpty) ...[
+                    const Divider(height: 30),
+
+                    const Row(
+                      children: [
+                        Icon(Icons.face_outlined),
+                        SizedBox(width: 8),
+                        Text(
+                          'Supervisor Face Capture',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    buildEvidenceImage(
+                      imageUrl: faceCaptureUrl,
+                      evidenceName: 'Supervisor Face Capture',
+                      height: 300,
+                    ),
+                  ],
+
+                  if ((signatureUrl == null || signatureUrl.isEmpty) &&
+                      (faceCaptureUrl == null || faceCaptureUrl.isEmpty)) ...[
+                    const Divider(height: 30),
+
+                    const Row(
+                      children: [
+                        Icon(Icons.image_not_supported_outlined),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'No signature or face image is available for this verification.',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  if (hasReviewInformation) ...[
+                    const Divider(height: 30),
+
+                    const Row(
+                      children: [
+                        Icon(Icons.rate_review_outlined),
+                        SizedBox(width: 8),
+                        Text(
+                          'Lecturer Review',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
 
                     const SizedBox(height: 14),
 
-                    buildDetailRow(
-                      'Profession',
-                      verification['profession'],
-                    ),
+                    buildDetailRow('Review Status', verificationStatus),
 
-                    buildDetailRow(
-                      'Registration Number',
-                      verification[
-                          'registration_number'],
-                    ),
+                    buildDetailRow('Reviewed By', reviewerName),
 
-                    buildDetailRow(
-                      'Supervisor Facility',
-                      verification[
-                          'supervisor_facility'],
-                    ),
+                    buildDetailRow('Reviewer DWU ID', reviewerDwuId),
 
-                    buildDetailRow(
-                      'Verification Method',
-                      verification[
-                          'verification_method'],
-                    ),
+                    buildDetailRow('Reviewed At', reviewedAt),
 
-                    buildDetailRow(
-                      'Verification Time',
-                      verification[
-                          'verification_timestamp'],
-                    ),
-
-                    const Divider(height: 28),
+                    const SizedBox(height: 4),
 
                     const Text(
-                      'Face Comparison',
+                      'Lecturer Comment',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    const Text(
-                      'Comparison Result',
-                      style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
 
-                    const SizedBox(height: 7),
-
-                    buildFaceComparisonBadge(
-                      faceComparisonDecision,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    buildDetailRow(
-                      'LBPH Distance',
-                      verification[
-                          'face_lbph_distance'],
-                    ),
-
                     const SizedBox(height: 8),
 
-                    const Text(
-                      'Face comparison is supporting evidence only.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Text(
+                        reviewComment == null || reviewComment.trim().isEmpty
+                            ? 'No lecturer comment was provided.'
+                            : reviewComment,
                       ),
                     ),
-
-                    if (signatureUrl != null &&
-                        signatureUrl.isNotEmpty) ...[
-                      const Divider(height: 30),
-
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.draw_outlined,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Supervisor Signature',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      buildEvidenceImage(
-                        imageUrl: signatureUrl,
-                        evidenceName:
-                            'Supervisor Signature',
-                        height: 180,
-                      ),
-                    ],
-
-                    if (faceCaptureUrl != null &&
-                        faceCaptureUrl.isNotEmpty) ...[
-                      const Divider(height: 30),
-
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.face_outlined,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Supervisor Face Capture',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      buildEvidenceImage(
-                        imageUrl: faceCaptureUrl,
-                        evidenceName:
-                            'Supervisor Face Capture',
-                        height: 300,
-                      ),
-                    ],
-
-                    if ((signatureUrl == null ||
-                            signatureUrl.isEmpty) &&
-                        (faceCaptureUrl == null ||
-                            faceCaptureUrl.isEmpty)) ...[
-                      const Divider(height: 30),
-
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons
-                                .image_not_supported_outlined,
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'No signature or face image is available for this verification.',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-
-                    if (hasReviewInformation) ...[
-                      const Divider(height: 30),
-
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons
-                                .rate_review_outlined,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Lecturer Review',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      buildDetailRow(
-                        'Review Status',
-                        verificationStatus,
-                      ),
-
-                      buildDetailRow(
-                        'Reviewed By',
-                        reviewerName,
-                      ),
-
-                      buildDetailRow(
-                        'Reviewer DWU ID',
-                        reviewerDwuId,
-                      ),
-
-                      buildDetailRow(
-                        'Reviewed At',
-                        reviewedAt,
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      const Text(
-                        'Lecturer Comment',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight:
-                              FontWeight.w600,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Container(
-                        width: double.infinity,
-                        padding:
-                            const EdgeInsets.all(
-                          12,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              Colors.grey.shade100,
-                          borderRadius:
-                              BorderRadius.circular(
-                            8,
-                          ),
-                          border: Border.all(
-                            color:
-                                Colors.grey.shade300,
-                          ),
-                        ),
-                        child: Text(
-                          reviewComment == null ||
-                                  reviewComment
-                                      .trim()
-                                      .isEmpty
-                              ? 'No lecturer comment was provided.'
-                              : reviewComment,
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
 
-        if (notice != null &&
-            notice.isNotEmpty) ...[
+        if (notice != null && notice.isNotEmpty) ...[
           const SizedBox(height: 8),
 
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.info_outline,
-                  ),
+                  const Icon(Icons.info_outline),
                   const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      notice,
-                    ),
-                  ),
+                  Expanded(child: Text(notice)),
                 ],
               ),
             ),
@@ -643,11 +475,8 @@ class _LecturerClinicalEntryDetailScreenState
     );
   }
 
-  Widget buildFaceComparisonBadge(
-    String decision,
-  ) {
-    final normalizedDecision =
-        decision.toUpperCase().trim();
+  Widget buildFaceComparisonBadge(String decision) {
+    final normalizedDecision = decision.toUpperCase().trim();
 
     Color backgroundColor;
     Color foregroundColor;
@@ -656,72 +485,53 @@ class _LecturerClinicalEntryDetailScreenState
 
     switch (normalizedDecision) {
       case 'LIKELY_MATCH':
-        backgroundColor =
-            Colors.blue.shade100;
-        foregroundColor =
-            Colors.blue.shade900;
+        backgroundColor = Colors.blue.shade100;
+        foregroundColor = Colors.blue.shade900;
         icon = Icons.face_outlined;
         label = 'LIKELY MATCH';
         break;
 
       case 'LIKELY_DIFFERENT':
-        backgroundColor =
-            Colors.red.shade50;
-        foregroundColor =
-            Colors.red.shade800;
+        backgroundColor = Colors.red.shade50;
+        foregroundColor = Colors.red.shade800;
         icon = Icons.person_off_outlined;
         label = 'LIKELY DIFFERENT';
         break;
 
       case 'INCONCLUSIVE':
-        backgroundColor =
-            Colors.amber.shade100;
-        foregroundColor =
-            Colors.amber.shade900;
+        backgroundColor = Colors.amber.shade100;
+        foregroundColor = Colors.amber.shade900;
         icon = Icons.help_outline;
         label = 'INCONCLUSIVE';
         break;
 
       case 'NOT_AVAILABLE':
-        backgroundColor =
-            Colors.grey.shade200;
-        foregroundColor =
-            Colors.grey.shade800;
+        backgroundColor = Colors.grey.shade200;
+        foregroundColor = Colors.grey.shade800;
         icon = Icons.info_outline;
         label = 'NOT AVAILABLE';
         break;
 
       default:
-        backgroundColor =
-            Colors.grey.shade200;
-        foregroundColor =
-            Colors.grey.shade800;
+        backgroundColor = Colors.grey.shade200;
+        foregroundColor = Colors.grey.shade800;
         icon = Icons.info_outline;
-        label = normalizedDecision
-            .replaceAll('_', ' ');
+        label = normalizedDecision.replaceAll('_', ' ');
         break;
     }
 
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 11,
-          vertical: 7,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius:
-              BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 17,
-              color: foregroundColor,
-            ),
+            Icon(icon, size: 17, color: foregroundColor),
             const SizedBox(width: 6),
             Text(
               label,
@@ -737,11 +547,8 @@ class _LecturerClinicalEntryDetailScreenState
     );
   }
 
-  Widget buildVerificationStatusBadge(
-    String status,
-  ) {
-    final normalizedStatus =
-        status.toUpperCase().trim();
+  Widget buildVerificationStatusBadge(String status) {
+    final normalizedStatus = status.toUpperCase().trim();
 
     Color backgroundColor;
     Color foregroundColor;
@@ -750,61 +557,44 @@ class _LecturerClinicalEntryDetailScreenState
 
     switch (normalizedStatus) {
       case 'APPROVED':
-        backgroundColor =
-            Colors.green.shade100;
-        foregroundColor =
-            Colors.green.shade800;
+        backgroundColor = Colors.green.shade100;
+        foregroundColor = Colors.green.shade800;
         icon = Icons.check_circle;
         label = 'APPROVED';
         break;
 
       case 'REJECTED':
-        backgroundColor =
-            Colors.red.shade100;
-        foregroundColor =
-            Colors.red.shade800;
+        backgroundColor = Colors.red.shade100;
+        foregroundColor = Colors.red.shade800;
         icon = Icons.cancel;
         label = 'REJECTED';
         break;
 
       case 'MANUAL_REVIEW':
-        backgroundColor =
-            Colors.orange.shade100;
-        foregroundColor =
-            Colors.orange.shade900;
+        backgroundColor = Colors.orange.shade100;
+        foregroundColor = Colors.orange.shade900;
         icon = Icons.rate_review_outlined;
         label = 'MANUAL REVIEW';
         break;
 
       default:
-        backgroundColor =
-            Colors.grey.shade200;
-        foregroundColor =
-            Colors.grey.shade800;
+        backgroundColor = Colors.grey.shade200;
+        foregroundColor = Colors.grey.shade800;
         icon = Icons.info_outline;
-        label = normalizedStatus
-            .replaceAll('_', ' ');
+        label = normalizedStatus.replaceAll('_', ' ');
         break;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius:
-            BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: foregroundColor,
-          ),
+          Icon(icon, size: 16, color: foregroundColor),
           const SizedBox(width: 5),
           Text(
             label,
@@ -825,32 +615,21 @@ class _LecturerClinicalEntryDetailScreenState
     required double height,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius:
-                BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(10),
             onTap: () {
-              openFullScreenImage(
-                imageUrl: imageUrl,
-                title: evidenceName,
-              );
+              openFullScreenImage(imageUrl: imageUrl, title: evidenceName);
             },
             child: Container(
               width: double.infinity,
-              constraints: BoxConstraints(
-                minHeight: height,
-              ),
+              constraints: BoxConstraints(minHeight: height),
               decoration: BoxDecoration(
-                border: Border.all(
-                  color:
-                      Colors.grey.shade300,
-                ),
-                borderRadius:
-                    BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(10),
               ),
               clipBehavior: Clip.antiAlias,
               child: Image.network(
@@ -858,53 +637,30 @@ class _LecturerClinicalEntryDetailScreenState
                 height: height,
                 width: double.infinity,
                 fit: BoxFit.contain,
-                loadingBuilder: (
-                  context,
-                  child,
-                  loadingProgress,
-                ) {
+                loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) {
                     return child;
                   }
 
                   return SizedBox(
                     height: height,
-                    child: const Center(
-                      child:
-                          CircularProgressIndicator(),
-                    ),
+                    child: const Center(child: CircularProgressIndicator()),
                   );
                 },
-                errorBuilder: (
-                  context,
-                  error,
-                  stackTrace,
-                ) {
+                errorBuilder: (context, error, stackTrace) {
                   return SizedBox(
                     height: height,
                     child: Center(
                       child: Padding(
-                        padding:
-                            const EdgeInsets.all(
-                          16,
-                        ),
+                        padding: const EdgeInsets.all(16),
                         child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment
-                                  .center,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons
-                                  .broken_image_outlined,
-                              size: 42,
-                            ),
-                            const SizedBox(
-                              height: 8,
-                            ),
+                            const Icon(Icons.broken_image_outlined, size: 42),
+                            const SizedBox(height: 8),
                             Text(
                               '$evidenceName could not be loaded.',
-                              textAlign:
-                                  TextAlign.center,
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -920,21 +676,13 @@ class _LecturerClinicalEntryDetailScreenState
         const SizedBox(height: 8),
 
         const Row(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.zoom_in,
-              size: 18,
-            ),
+            Icon(Icons.zoom_in, size: 18),
             SizedBox(width: 5),
             Text(
               'Tap image to enlarge',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight:
-                    FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -942,38 +690,24 @@ class _LecturerClinicalEntryDetailScreenState
     );
   }
 
-  Widget buildDetailRow(
-    String label,
-    dynamic value,
-  ) {
-    final text =
-        value == null ||
-                value.toString().trim().isEmpty
-            ? '-'
-            : value.toString();
+  Widget buildDetailRow(String label, dynamic value) {
+    final text = value == null || value.toString().trim().isEmpty
+        ? '-'
+        : value.toString();
 
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 8,
-      ),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 145,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          Expanded(
-            child: Text(
-              text,
-            ),
-          ),
+          Expanded(child: Text(text)),
         ],
       ),
     );

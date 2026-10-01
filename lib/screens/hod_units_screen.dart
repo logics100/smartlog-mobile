@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 import 'hod_unit_progress_screen.dart';
 
@@ -96,9 +97,7 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
     await loadUnits();
   }
 
-  Future<void> openUnitProgress(
-    Map<String, dynamic> unit,
-  ) async {
+  Future<void> openUnitProgress(Map<String, dynamic> unit) async {
     final unitId = unit['id'];
 
     if (unitId is! int) {
@@ -106,11 +105,7 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
     }
 
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => HodUnitProgressScreen(
-          unitId: unitId,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => HodUnitProgressScreen(unitId: unitId)),
     );
 
     if (!mounted) return;
@@ -121,7 +116,18 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FD),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF062B63),
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
         title: const Text('Department Units'),
         actions: [
           IconButton(
@@ -136,12 +142,10 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
           buildFilterCard(),
           Expanded(
             child: loading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
+                ? const Center(child: CircularProgressIndicator())
                 : errorMessage != null
-                    ? buildErrorState()
-                    : buildUnitList(),
+                ? buildErrorState()
+                : buildUnitList(),
           ),
         ],
       ),
@@ -150,6 +154,13 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
 
   Widget buildFilterCard() {
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
+      ),
       margin: const EdgeInsets.all(16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -169,14 +180,12 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
                   child: Text('All Year Levels'),
                 ),
                 ...yearLevels.map((item) {
-                  final year =
-                      Map<String, dynamic>.from(item as Map);
+                  final year = Map<String, dynamic>.from(item as Map);
 
                   return DropdownMenuItem<int?>(
                     value: year['id'] as int?,
                     child: Text(
-                      year['year_name']?.toString() ??
-                          'Year Level',
+                      year['year_name']?.toString() ?? 'Year Level',
                       overflow: TextOverflow.ellipsis,
                     ),
                   );
@@ -214,15 +223,9 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 52,
-            ),
+            const Icon(Icons.error_outline, size: 52),
             const SizedBox(height: 16),
-            Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-            ),
+            Text(errorMessage!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: loadUnits,
@@ -239,12 +242,7 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
     return RefreshIndicator(
       onRefresh: loadUnits,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          0,
-          16,
-          24,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
           Row(
             children: [
@@ -259,10 +257,7 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
                 ),
               ),
               const Chip(
-                avatar: Icon(
-                  Icons.visibility_outlined,
-                  size: 17,
-                ),
+                avatar: Icon(Icons.visibility_outlined, size: 17),
                 label: Text('Read Only'),
               ),
             ],
@@ -270,27 +265,27 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
           const SizedBox(height: 12),
           if (units.isEmpty)
             const Card(
+              color: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                side: BorderSide(color: Color(0xFFDBE7F2)),
+              ),
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.menu_book_outlined,
-                      size: 48,
-                    ),
+                    Icon(Icons.menu_book_outlined, size: 48),
                     SizedBox(height: 12),
-                    Text(
-                      'No units found.',
-                      textAlign: TextAlign.center,
-                    ),
+                    Text('No units found.', textAlign: TextAlign.center),
                   ],
                 ),
               ),
             )
           else
             ...units.map((item) {
-              final unit =
-                  Map<String, dynamic>.from(item as Map);
+              final unit = Map<String, dynamic>.from(item as Map);
 
               return buildUnitCard(unit);
             }),
@@ -299,45 +294,38 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
     );
   }
 
-  Widget buildUnitCard(
-    Map<String, dynamic> unit,
-  ) {
-    final yearLevel = Map<String, dynamic>.from(
-      unit['year_level'] ?? {},
-    );
+  Widget buildUnitCard(Map<String, dynamic> unit) {
+    final yearLevel = Map<String, dynamic>.from(unit['year_level'] ?? {});
 
-    final statistics = Map<String, dynamic>.from(
-      unit['statistics'] ?? {},
-    );
+    final statistics = Map<String, dynamic>.from(unit['statistics'] ?? {});
 
-    final unitCode =
-        unit['unit_code']?.toString() ?? 'UNIT';
+    final unitCode = unit['unit_code']?.toString() ?? 'UNIT';
 
-    final unitName =
-        unit['unit_name']?.toString() ?? 'Unit';
+    final unitName = unit['unit_name']?.toString() ?? 'Unit';
 
-    final yearName =
-        yearLevel['year_name']?.toString() ??
-            'Year Level Not Set';
+    final yearName = yearLevel['year_name']?.toString() ?? 'Year Level Not Set';
 
     final requiresLogbook =
-        unit['requires_logbook'] == true ||
-            unit['requires_logbook'] == 1;
+        unit['requires_logbook'] == true || unit['requires_logbook'] == 1;
 
-    final enrolledStudents =
-        statistics['enrolled_students'] ?? 0;
+    final enrolledStudents = statistics['enrolled_students'] ?? 0;
 
-    final logbookCount =
-        statistics['logbook_count'] ?? 0;
+    final logbookCount = statistics['logbook_count'] ?? 0;
 
     final averageCompletion = toDouble(
       statistics['average_completion_percentage'],
     );
 
-    final progress =
-        (averageCompletion / 100).clamp(0.0, 1.0);
+    final progress = (averageCompletion / 100).clamp(0.0, 1.0);
 
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFFDBE7F2)),
+      ),
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -350,16 +338,11 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CircleAvatar(
-                    child: Icon(
-                      Icons.menu_book_outlined,
-                    ),
-                  ),
+                  const CircleAvatar(child: Icon(Icons.menu_book_outlined)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           unitCode,
@@ -371,17 +354,13 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
                         const SizedBox(height: 4),
                         Text(
                           unitName,
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                          ),
+                          style: TextStyle(color: Colors.grey.shade700),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Chip(
-                    label: Text(yearName),
-                  ),
+                  Chip(label: Text(yearName)),
                 ],
               ),
               const SizedBox(height: 14),
@@ -409,37 +388,24 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
                   Expanded(
                     child: Text(
                       'Average Completion',
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                      ),
+                      style: TextStyle(color: Colors.grey.shade700),
                     ),
                   ),
                   Text(
                     '${averageCompletion.toStringAsFixed(2)}%',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-              ),
+              LinearProgressIndicator(value: progress, minHeight: 8),
               const SizedBox(height: 16),
               Wrap(
                 spacing: 24,
                 runSpacing: 12,
                 children: [
-                  buildSmallStat(
-                    'Students',
-                    enrolledStudents,
-                  ),
-                  buildSmallStat(
-                    'Logbooks',
-                    logbookCount,
-                  ),
+                  buildSmallStat('Students', enrolledStudents),
+                  buildSmallStat('Logbooks', logbookCount),
                 ],
               ),
               const SizedBox(height: 14),
@@ -449,17 +415,12 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
                   Text(
                     'View Unit Progress',
                     style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(
-                    Icons.chevron_right,
-                    size: 20,
-                  ),
+                  const Icon(Icons.chevron_right, size: 20),
                 ],
               ),
             ],
@@ -469,27 +430,18 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
     );
   }
 
-  Widget buildSmallStat(
-    String label,
-    dynamic value,
-  ) {
+  Widget buildSmallStat(String label, dynamic value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value.toString(),
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade700,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
         ),
       ],
     );
@@ -504,9 +456,6 @@ class _HodUnitsScreenState extends State<HodUnitsScreen> {
       return value.toDouble();
     }
 
-    return double.tryParse(
-          value.toString(),
-        ) ??
-        0;
+    return double.tryParse(value.toString()) ?? 0;
   }
 }

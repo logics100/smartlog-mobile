@@ -5,25 +5,19 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-class SmartLogAuthenticationException
-    implements Exception {
+class SmartLogAuthenticationException implements Exception {
   final String message;
 
-  SmartLogAuthenticationException(
-    this.message,
-  );
+  SmartLogAuthenticationException(this.message);
 
   @override
   String toString() => message;
 }
 
-class SmartLogNetworkException
-    implements Exception {
+class SmartLogNetworkException implements Exception {
   final String message;
 
-  SmartLogNetworkException(
-    this.message,
-  );
+  SmartLogNetworkException(this.message);
 
   @override
   String toString() => message;
@@ -37,11 +31,7 @@ class ApiService {
 
   static Uri get serverRootUri {
     final apiUri = Uri.parse(baseUrl);
-    return apiUri.replace(
-      path: '/',
-      query: null,
-      fragment: null,
-    );
+    return apiUri.replace(path: '/', query: null, fragment: null);
   }
 
   static String? token;
@@ -50,109 +40,74 @@ class ApiService {
   // AUTHENTICATION
   // ===========================================================================
 
-
-
   static Future<Map<String, dynamic>> login({
-  required String login,
-  required String password,
-}) async {
-  try {
-    final response = await http
-        .post(
-          Uri.parse(
-            '$baseUrl/login',
-          ),
-          headers: {
-            'Content-Type':
-                'application/json',
-            'Accept':
-                'application/json',
-          },
-          body: jsonEncode({
-            'login': login,
-            'password': password,
-          }),
-        )
-        .timeout(
-          const Duration(
-            seconds: 8,
-          ),
-        );
-
-    Map<String, dynamic> data = {};
-
+    required String login,
+    required String password,
+  }) async {
     try {
-      final decoded =
-          jsonDecode(response.body);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/login'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'login': login, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 8));
 
-      if (decoded is Map) {
-        data =
-            Map<String, dynamic>.from(
-          decoded,
-        );
+      Map<String, dynamic> data = {};
+
+      try {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map) {
+          data = Map<String, dynamic>.from(decoded);
+        }
+      } catch (_) {
+        // Handle unexpected non-JSON response.
       }
-    } catch (_) {
-      // Handle unexpected non-JSON response.
+
+      if (response.statusCode == 200) {
+        token = data['token']?.toString();
+
+        return data;
+      }
+
+      // Laravel responded, so this is NOT
+      // an offline/network failure.
+      throw SmartLogAuthenticationException(
+        data['message']?.toString() ?? 'Invalid DWU ID/email or password.',
+      );
+    } on SmartLogAuthenticationException {
+      rethrow;
+    } on SocketException catch (e) {
+      throw SmartLogNetworkException('Unable to reach SmartLog server: $e');
+    } on TimeoutException {
+      throw SmartLogNetworkException('SmartLog server connection timed out.');
+    } on http.ClientException catch (e) {
+      throw SmartLogNetworkException(
+        'Unable to connect to SmartLog server: $e',
+      );
     }
-
-    if (response.statusCode == 200) {
-      token =
-          data['token']?.toString();
-
-      return data;
-    }
-
-    // Laravel responded, so this is NOT
-    // an offline/network failure.
-    throw SmartLogAuthenticationException(
-      data['message']?.toString() ??
-          'Invalid DWU ID/email or password.',
-    );
-  } on SmartLogAuthenticationException {
-    rethrow;
-  } on SocketException catch (e) {
-    throw SmartLogNetworkException(
-      'Unable to reach SmartLog server: $e',
-    );
-  } on TimeoutException {
-    throw SmartLogNetworkException(
-      'SmartLog server connection timed out.',
-    );
-  } on http.ClientException catch (e) {
-    throw SmartLogNetworkException(
-      'Unable to connect to SmartLog server: $e',
-    );
   }
-}
+
   static Future<bool> isServerReachable() async {
     try {
       final response = await http
-          .get(
-            serverRootUri,
-            headers: {
-              'Accept': 'text/html',
-            },
-          )
-          .timeout(
-            const Duration(
-              seconds: 5,
-            ),
-          );
+          .get(serverRootUri, headers: {'Accept': 'text/html'})
+          .timeout(const Duration(seconds: 5));
 
-      debugPrint(
-        'SERVER CHECK STATUS: ${response.statusCode}',
-      );
+      debugPrint('SERVER CHECK STATUS: ${response.statusCode}');
 
-      return response.statusCode >= 200 &&
-          response.statusCode < 500;
+      return response.statusCode >= 200 && response.statusCode < 500;
     } catch (e) {
-      debugPrint(
-        'SERVER CHECK ERROR: $e',
-      );
+      debugPrint('SERVER CHECK ERROR: $e');
 
       return false;
     }
   }
+
   static Future<void> logout() async {
     if (token == null) {
       return;
@@ -160,10 +115,7 @@ class ApiService {
 
     await http.post(
       Uri.parse('$baseUrl/logout'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
     token = null;
@@ -173,84 +125,56 @@ class ApiService {
   // STUDENT
   // ===========================================================================
 
-  static Future<List<dynamic>>
-      getStudentLogbooks() async {
+  static Future<List<dynamic>> getStudentLogbooks() async {
     final response = await http.get(
       Uri.parse('$baseUrl/student/logbooks'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['logbooks'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ?? 'Unable to load logbooks',
-    );
+    throw Exception(data['message'] ?? 'Unable to load logbooks');
   }
 
-  static Future<Map<String, dynamic>>
-      getStudentLogbookDetails(
+  static Future<Map<String, dynamic>> getStudentLogbookDetails(
     int logbookId,
   ) async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/student/logbooks/$logbookId',
-      ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/student/logbooks/$logbookId'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load logbook details',
-    );
+    throw Exception(data['message'] ?? 'Unable to load logbook details');
   }
 
-  static Future<Map<String, dynamic>>
-      getStudentLogbookProgress(
+  static Future<Map<String, dynamic>> getStudentLogbookProgress(
     int logbookId,
   ) async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/student/logbooks/$logbookId/progress',
-      ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/student/logbooks/$logbookId/progress'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load logbook progress',
-    );
+    throw Exception(data['message'] ?? 'Unable to load logbook progress');
   }
 
-  static Future<Map<String, dynamic>>
-      createClinicalEntry({
+  static Future<Map<String, dynamic>> createClinicalEntry({
     required int logbookId,
     required int logbookItemId,
     int? requirementId,
@@ -272,8 +196,7 @@ class ApiService {
       },
       body: jsonEncode({
         'logbook_item_id': logbookItemId,
-        'logbook_item_requirement_id':
-            requirementId,
+        'logbook_item_requirement_id': requirementId,
         'activity_date': activityDate,
         'activity_time': activityTime,
         'facility_name': facilityName,
@@ -282,77 +205,52 @@ class ApiService {
       }),
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 201) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to create clinical entry',
-    );
+    throw Exception(data['message'] ?? 'Unable to create clinical entry');
   }
 
-  static Future<List<dynamic>>
-      getClinicalEntries(
-    int logbookId,
-  ) async {
+  static Future<List<dynamic>> getClinicalEntries(int logbookId) async {
     final response = await http.get(
       Uri.parse(
         '$baseUrl/student/logbooks/'
         '$logbookId/clinical-entries',
       ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['entries'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load clinical entries',
-    );
+    throw Exception(data['message'] ?? 'Unable to load clinical entries');
   }
 
-  static Future<List<dynamic>>
-      searchClinicalSupervisors(
-    String search,
-  ) async {
+  static Future<List<dynamic>> searchClinicalSupervisors(String search) async {
     final response = await http.get(
       Uri.parse(
         '$baseUrl/student/clinical-supervisors/search'
         '?search=${Uri.encodeQueryComponent(search)}',
       ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['supervisors'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to search clinical supervisors',
-    );
+    throw Exception(data['message'] ?? 'Unable to search clinical supervisors');
   }
 
-  static Future<Map<String, dynamic>>
-      registerSupervisorReferenceFace({
+  static Future<Map<String, dynamic>> registerSupervisorReferenceFace({
     required int supervisorId,
     required List<int> referenceFaceBytes,
   }) async {
@@ -377,31 +275,24 @@ class ApiService {
       ),
     );
 
-    final streamedResponse =
-        await request.send();
+    final streamedResponse = await request.send();
 
-    final response =
-        await http.Response.fromStream(
-      streamedResponse,
-    );
+    final response = await http.Response.fromStream(streamedResponse);
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 201) {
       return data;
     }
 
     throw Exception(
-      data['message'] ??
-          'Unable to register supervisor reference face',
+      data['message'] ?? 'Unable to register supervisor reference face',
     );
   }
 
-  static Future<Map<String, dynamic>>
-      verifyClinicalEntry({
+  static Future<Map<String, dynamic>> verifyClinicalEntry({
     required int entryId,
-    required int clinicalSupervisorId,
+    int? clinicalSupervisorId,
     required String supervisorName,
     String? facilityName,
     required List<int> signatureBytes,
@@ -430,20 +321,18 @@ class ApiService {
       'Authorization': 'Bearer $token',
     });
 
-    request.fields['supervisor_name'] =
-        supervisorName;
+    request.fields['supervisor_name'] = supervisorName;
 
-    request.fields['clinical_supervisor_id'] =
-        clinicalSupervisorId.toString();
-
-    if (facilityName != null &&
-        facilityName.isNotEmpty) {
-      request.fields['facility_name'] =
-          facilityName;
+    if (clinicalSupervisorId != null) {
+      request.fields['clinical_supervisor_id'] = clinicalSupervisorId
+          .toString();
     }
 
-    request.fields['verification_timestamp'] =
-        verificationTimestamp;
+    if (facilityName != null && facilityName.isNotEmpty) {
+      request.fields['facility_name'] = facilityName;
+    }
+
+    request.fields['verification_timestamp'] = verificationTimestamp;
 
     request.files.add(
       http.MultipartFile.fromBytes(
@@ -453,8 +342,7 @@ class ApiService {
       ),
     );
 
-    if (faceBytes != null &&
-        faceBytes.isNotEmpty) {
+    if (faceBytes != null && faceBytes.isNotEmpty) {
       request.files.add(
         http.MultipartFile.fromBytes(
           'face_capture',
@@ -464,72 +352,49 @@ class ApiService {
       );
     }
 
-    final streamedResponse =
-        await request.send();
+    final streamedResponse = await request.send();
 
-    final response =
-        await http.Response.fromStream(
-      streamedResponse,
-    );
+    final response = await http.Response.fromStream(streamedResponse);
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 201) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to submit verification',
-    );
+    throw Exception(data['message'] ?? 'Unable to submit verification');
   }
-    // ===========================================================================
+  // ===========================================================================
   // STUDENT - ATTENDANCE
   // ===========================================================================
 
-  static Future<List<dynamic>>
-      getStudentAttendanceRecords(
+  static Future<List<dynamic>> getStudentAttendanceRecords(
     int logbookId,
   ) async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/student/logbooks/$logbookId/attendance',
-      ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/student/logbooks/$logbookId/attendance'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['attendance_records'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load attendance records',
-    );
+    throw Exception(data['message'] ?? 'Unable to load attendance records');
   }
 
-  static Future<Map<String, dynamic>>
-      createStudentAttendance({
+  static Future<Map<String, dynamic>> createStudentAttendance({
     required int logbookId,
     required String attendanceDate,
     required String facilityName,
     required String clinicalUnit,
     required String startTime,
     required String finishTime,
-  }) 
-  
-  async {
+  }) async {
     final response = await http.post(
-      Uri.parse(
-        '$baseUrl/student/logbooks/$logbookId/attendance',
-      ),
+      Uri.parse('$baseUrl/student/logbooks/$logbookId/attendance'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -544,29 +409,21 @@ class ApiService {
       }),
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
-    if (response.statusCode == 200 ||
-        response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return data;
     }
 
-    String message =
-        data['message'] ??
-            'Unable to create attendance record';
+    String message = data['message'] ?? 'Unable to create attendance record';
 
     if (data['errors'] is Map) {
-      final errors =
-          Map<String, dynamic>.from(
-        data['errors'],
-      );
+      final errors = Map<String, dynamic>.from(data['errors']);
 
       if (errors.isNotEmpty) {
         final firstError = errors.values.first;
 
-        if (firstError is List &&
-            firstError.isNotEmpty) {
+        if (firstError is List && firstError.isNotEmpty) {
           message = firstError.first.toString();
         }
       }
@@ -574,113 +431,96 @@ class ApiService {
 
     throw Exception(message);
   }
-  static Future<Map<String, dynamic>>
-    verifyStudentAttendance({
-  required int attendanceId,
-  required int clinicalSupervisorId,
-  required String supervisorName,
-  String? facilityName,
-  required List<int> signatureBytes,
-  List<int>? faceBytes,
-}) async {
-  final now = DateTime.now();
 
-  final verificationTimestamp =
-      '${now.year.toString().padLeft(4, '0')}-'
-      '${now.month.toString().padLeft(2, '0')}-'
-      '${now.day.toString().padLeft(2, '0')} '
-      '${now.hour.toString().padLeft(2, '0')}:'
-      '${now.minute.toString().padLeft(2, '0')}:'
-      '${now.second.toString().padLeft(2, '0')}';
+  static Future<Map<String, dynamic>> verifyStudentAttendance({
+    required int attendanceId,
+    int? clinicalSupervisorId,
+    required String supervisorName,
+    String? facilityName,
+    required List<int> signatureBytes,
+    List<int>? faceBytes,
+  }) async {
+    final now = DateTime.now();
 
-  final request = http.MultipartRequest(
-    'POST',
-    Uri.parse(
-      '$baseUrl/student/attendance/$attendanceId/verify',
-    ),
-  );
+    final verificationTimestamp =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')} '
+        '${now.hour.toString().padLeft(2, '0')}:'
+        '${now.minute.toString().padLeft(2, '0')}:'
+        '${now.second.toString().padLeft(2, '0')}';
 
-  request.headers.addAll({
-    'Accept': 'application/json',
-    'Authorization': 'Bearer $token',
-  });
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/student/attendance/$attendanceId/verify'),
+    );
 
-  request.fields['clinical_supervisor_id'] =
-      clinicalSupervisorId.toString();
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
 
-  request.fields['supervisor_name'] =
-      supervisorName.trim();
+    if (clinicalSupervisorId != null) {
+      request.fields['clinical_supervisor_id'] = clinicalSupervisorId
+          .toString();
+    }
 
-  if (facilityName != null &&
-      facilityName.trim().isNotEmpty) {
-    request.fields['facility_name'] =
-        facilityName.trim();
-  }
+    request.fields['supervisor_name'] = supervisorName.trim();
 
-  request.fields['verification_timestamp'] =
-      verificationTimestamp;
+    if (facilityName != null && facilityName.trim().isNotEmpty) {
+      request.fields['facility_name'] = facilityName.trim();
+    }
 
-  request.files.add(
-    http.MultipartFile.fromBytes(
-      'signature',
-      signatureBytes,
-      filename: 'attendance_signature.png',
-    ),
-  );
+    request.fields['verification_timestamp'] = verificationTimestamp;
 
-  if (faceBytes != null && faceBytes.isNotEmpty) {
     request.files.add(
       http.MultipartFile.fromBytes(
-        'face_capture',
-        faceBytes,
-        filename: 'attendance_supervisor_face.jpg',
+        'signature',
+        signatureBytes,
+        filename: 'attendance_signature.png',
       ),
     );
-  }
 
-  final streamedResponse =
-      await request.send();
+    if (faceBytes != null && faceBytes.isNotEmpty) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'face_capture',
+          faceBytes,
+          filename: 'attendance_supervisor_face.jpg',
+        ),
+      );
+    }
 
-  final response =
-      await http.Response.fromStream(
-    streamedResponse,
-  );
+    final streamedResponse = await request.send();
 
-  Map<String, dynamic> data = {};
+    final response = await http.Response.fromStream(streamedResponse);
 
-  if (response.body.isNotEmpty) {
-    data = Map<String, dynamic>.from(
-      jsonDecode(response.body),
-    );
-  }
+    Map<String, dynamic> data = {};
 
-  if (response.statusCode == 200 ||
-      response.statusCode == 201) {
-    return data;
-  }
+    if (response.body.isNotEmpty) {
+      data = Map<String, dynamic>.from(jsonDecode(response.body));
+    }
 
-  String message =
-      data['message'] ??
-          'Unable to verify attendance';
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return data;
+    }
 
-  if (data['errors'] is Map) {
-    final errors =
-        Map<String, dynamic>.from(
-      data['errors'],
-    );
+    String message = data['message'] ?? 'Unable to verify attendance';
 
-    if (errors.isNotEmpty) {
-      final firstError = errors.values.first;
+    if (data['errors'] is Map) {
+      final errors = Map<String, dynamic>.from(data['errors']);
 
-      if (firstError is List &&
-          firstError.isNotEmpty) {
-        message = firstError.first.toString();
+      if (errors.isNotEmpty) {
+        final firstError = errors.values.first;
+
+        if (firstError is List && firstError.isNotEmpty) {
+          message = firstError.first.toString();
+        }
       }
     }
-  }
 
-  throw Exception(message);
-}
+    throw Exception(message);
+  }
 
   // ===========================================================================
   // LECTURER
@@ -689,10 +529,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getLecturerDashboard() async {
     final response = await http.get(
       Uri.parse('$baseUrl/lecturer/dashboard'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
     final Map<String, dynamic> data = jsonDecode(response.body);
@@ -701,37 +538,25 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['message'] ?? 'Unable to load lecturer dashboard',
-    );
+    throw Exception(data['message'] ?? 'Unable to load lecturer dashboard');
   }
-  static Future<List<dynamic>>
-      getLecturerPendingVerifications() async {
+
+  static Future<List<dynamic>> getLecturerPendingVerifications() async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/lecturer/verifications/pending',
-      ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/lecturer/verifications/pending'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['verifications'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load pending verifications',
-    );
+    throw Exception(data['message'] ?? 'Unable to load pending verifications');
   }
 
-  static Future<Map<String, dynamic>>
-      getLecturerVerificationDetails(
+  static Future<Map<String, dynamic>> getLecturerVerificationDetails(
     int verificationId,
   ) async {
     final response = await http.get(
@@ -739,27 +564,19 @@ class ApiService {
         '$baseUrl/lecturer/verifications/'
         '$verificationId',
       ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load verification details',
-    );
+    throw Exception(data['message'] ?? 'Unable to load verification details');
   }
 
-  static Future<Map<String, dynamic>>
-      reviewLecturerVerification({
+  static Future<Map<String, dynamic>> reviewLecturerVerification({
     required int verificationId,
     required String decision,
     String? comment,
@@ -774,79 +591,49 @@ class ApiService {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'decision': decision,
-        'comment': comment,
-      }),
+      body: jsonEncode({'decision': decision, 'comment': comment}),
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to review verification',
-    );
+    throw Exception(data['message'] ?? 'Unable to review verification');
   }
 
-  static Future<List<dynamic>>
-      getLecturerUnits() async {
+  static Future<List<dynamic>> getLecturerUnits() async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/lecturer/units',
-      ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/lecturer/units'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['units'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load lecturer units',
-    );
+    throw Exception(data['message'] ?? 'Unable to load lecturer units');
   }
 
-  static Future<List<dynamic>>
-      getLecturerUnitStudents(
-    int unitId,
-  ) async {
+  static Future<List<dynamic>> getLecturerUnitStudents(int unitId) async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/lecturer/units/$unitId/students',
-      ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/lecturer/units/$unitId/students'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['students'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load students for this unit',
-    );
+    throw Exception(data['message'] ?? 'Unable to load students for this unit');
   }
 
-  static Future<List<dynamic>>
-      searchStudentsForUnit({
+  static Future<List<dynamic>> searchStudentsForUnit({
     required int unitId,
     required String search,
   }) async {
@@ -855,60 +642,42 @@ class ApiService {
         '$baseUrl/lecturer/units/$unitId/students/search'
         '?search=${Uri.encodeQueryComponent(search)}',
       ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['students'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to search students',
-    );
+    throw Exception(data['message'] ?? 'Unable to search students');
   }
 
-  static Future<Map<String, dynamic>>
-      enrollStudentInUnit({
+  static Future<Map<String, dynamic>> enrollStudentInUnit({
     required int unitId,
     required int studentId,
   }) async {
     final response = await http.post(
-      Uri.parse(
-        '$baseUrl/lecturer/units/$unitId/enroll',
-      ),
+      Uri.parse('$baseUrl/lecturer/units/$unitId/enroll'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'student_id': studentId,
-      }),
+      body: jsonEncode({'student_id': studentId}),
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
-    if (response.statusCode == 200 ||
-        response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to enroll student',
-    );
+    throw Exception(data['message'] ?? 'Unable to enroll student');
   }
 
-  static Future<Map<String, dynamic>>
-      getLecturerStudentProgress({
+  static Future<Map<String, dynamic>> getLecturerStudentProgress({
     required int unitId,
     required int studentId,
   }) async {
@@ -917,27 +686,21 @@ class ApiService {
         '$baseUrl/lecturer/units/'
         '$unitId/students/$studentId/progress',
       ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
     throw Exception(
-      data['message'] ??
-          'Unable to load student clinical progress',
+      data['message'] ?? 'Unable to load student clinical progress',
     );
   }
 
-  static Future<Map<String, dynamic>>
-      getLecturerClinicalEntryDetails({
+  static Future<Map<String, dynamic>> getLecturerClinicalEntryDetails({
     required int unitId,
     required int studentId,
     required int entryId,
@@ -948,54 +711,38 @@ class ApiService {
         '$unitId/students/$studentId/'
         'entries/$entryId',
       ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load clinical entry details',
-    );
+    throw Exception(data['message'] ?? 'Unable to load clinical entry details');
   }
 
   // ===========================================================================
   // HOD - READ ONLY
   // ===========================================================================
 
-  static Future<Map<String, dynamic>>
-      getHodDashboard() async {
+  static Future<Map<String, dynamic>> getHodDashboard() async {
     final response = await http.get(
       Uri.parse('$baseUrl/hod/dashboard'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load HOD dashboard',
-    );
+    throw Exception(data['message'] ?? 'Unable to load HOD dashboard');
   }
 
-  static Future<List<dynamic>>
-      getHodStudents({
+  static Future<List<dynamic>> getHodStudents({
     String search = '',
     int? yearLevelId,
   }) async {
@@ -1006,197 +753,125 @@ class ApiService {
     }
 
     if (yearLevelId != null) {
-      queryParameters['year_level_id'] =
-          yearLevelId.toString();
+      queryParameters['year_level_id'] = yearLevelId.toString();
     }
 
-    final uri = Uri.parse(
-      '$baseUrl/hod/students',
-    ).replace(
-      queryParameters: queryParameters.isEmpty
-          ? null
-          : queryParameters,
+    final uri = Uri.parse('$baseUrl/hod/students').replace(
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
 
     final response = await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['students'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load department students',
-    );
+    throw Exception(data['message'] ?? 'Unable to load department students');
   }
 
-  static Future<Map<String, dynamic>>
-      getHodStudentProgress(
+  static Future<Map<String, dynamic>> getHodStudentProgress(
     int studentId,
   ) async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/hod/students/$studentId/progress',
-      ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/hod/students/$studentId/progress'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load student progress',
-    );
+    throw Exception(data['message'] ?? 'Unable to load student progress');
   }
 
-  static Future<List<dynamic>>
-      getHodUnits({
-    int? yearLevelId,
-  }) async {
+  static Future<List<dynamic>> getHodUnits({int? yearLevelId}) async {
     final queryParameters = <String, String>{};
 
     if (yearLevelId != null) {
-      queryParameters['year_level_id'] =
-          yearLevelId.toString();
+      queryParameters['year_level_id'] = yearLevelId.toString();
     }
 
-    final uri = Uri.parse(
-      '$baseUrl/hod/units',
-    ).replace(
-      queryParameters: queryParameters.isEmpty
-          ? null
-          : queryParameters,
+    final uri = Uri.parse('$baseUrl/hod/units').replace(
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
 
     final response = await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['units'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load department units',
-    );
+    throw Exception(data['message'] ?? 'Unable to load department units');
   }
 
-  static Future<Map<String, dynamic>>
-      getHodUnitProgress(
-    int unitId,
-  ) async {
+  static Future<Map<String, dynamic>> getHodUnitProgress(int unitId) async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/hod/units/$unitId/progress',
-      ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/hod/units/$unitId/progress'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load unit progress',
-    );
+    throw Exception(data['message'] ?? 'Unable to load unit progress');
   }
 
-  static Future<List<dynamic>>
-      getHodYearLevels() async {
+  static Future<List<dynamic>> getHodYearLevels() async {
     final response = await http.get(
       Uri.parse('$baseUrl/hod/year-levels'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['year_levels'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load department year levels',
-    );
+    throw Exception(data['message'] ?? 'Unable to load department year levels');
   }
 
-  static Future<List<dynamic>>
-      getHodLecturers({
-    String search = '',
-  }) async {
+  static Future<List<dynamic>> getHodLecturers({String search = ''}) async {
     final queryParameters = <String, String>{};
 
     if (search.trim().isNotEmpty) {
       queryParameters['search'] = search.trim();
     }
 
-    final uri = Uri.parse(
-      '$baseUrl/hod/lecturers',
-    ).replace(
-      queryParameters: queryParameters.isEmpty
-          ? null
-          : queryParameters,
+    final uri = Uri.parse('$baseUrl/hod/lecturers').replace(
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
 
     final response = await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data['lecturers'] ?? [];
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load department lecturers',
-    );
+    throw Exception(data['message'] ?? 'Unable to load department lecturers');
   }
 
-  static Future<Map<String, dynamic>>
-      getHodLecturerProgress(
+  static Future<Map<String, dynamic>> getHodLecturerProgress(
     int lecturerId,
   ) async {
     final response = await http.get(
@@ -1204,58 +879,42 @@ class ApiService {
         '$baseUrl/hod/lecturers/'
         '$lecturerId/progress',
       ),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load lecturer progress',
-    );
+    throw Exception(data['message'] ?? 'Unable to load lecturer progress');
   }
 
   // ===========================================================================
   // ICT ADMIN - SYSTEM MANAGEMENT
   // ===========================================================================
 
-  static Future<Map<String, dynamic>>
-      getAdminDashboard() async {
+  static Future<Map<String, dynamic>> getAdminDashboard() async {
     final response = await http.get(
       Uri.parse('$baseUrl/admin/dashboard'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load ICT Admin dashboard',
-    );
+    throw Exception(data['message'] ?? 'Unable to load ICT Admin dashboard');
   }
 
   // ===========================================================================
   // ICT ADMIN - USER MANAGEMENT
   // ===========================================================================
 
-  static Future<Map<String, dynamic>>
-      getAdminUsers({
+  static Future<Map<String, dynamic>> getAdminUsers({
     String search = '',
     String? role,
     int? departmentId,
@@ -1267,53 +926,37 @@ class ApiService {
       queryParameters['search'] = search.trim();
     }
 
-    if (role != null &&
-        role.trim().isNotEmpty) {
+    if (role != null && role.trim().isNotEmpty) {
       queryParameters['role'] = role.trim();
     }
 
     if (departmentId != null) {
-      queryParameters['department_id'] =
-          departmentId.toString();
+      queryParameters['department_id'] = departmentId.toString();
     }
 
-    if (status != null &&
-        status.trim().isNotEmpty) {
+    if (status != null && status.trim().isNotEmpty) {
       queryParameters['status'] = status.trim();
     }
 
-    final uri = Uri.parse(
-      '$baseUrl/admin/users',
-    ).replace(
-      queryParameters: queryParameters.isEmpty
-          ? null
-          : queryParameters,
+    final uri = Uri.parse('$baseUrl/admin/users').replace(
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
 
     final response = await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load ICT Admin users',
-    );
+    throw Exception(data['message'] ?? 'Unable to load ICT Admin users');
   }
 
-
-  static Future<Map<String, dynamic>>
-      createAdminUser({
+  static Future<Map<String, dynamic>> createAdminUser({
     required String dwuId,
     required String name,
     required String email,
@@ -1336,9 +979,7 @@ class ApiService {
         'dwu_id': dwuId.trim(),
         'name': name.trim(),
         'email': email.trim(),
-        'phone': phone?.trim().isEmpty == true
-            ? null
-            : phone?.trim(),
+        'phone': phone?.trim().isEmpty == true ? null : phone?.trim(),
         'role': role,
         'department_id': departmentId,
         'year_level_id': yearLevelId,
@@ -1348,25 +989,21 @@ class ApiService {
       }),
     );
 
-    final Map<String, dynamic> data =
-        jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 201) {
       return data;
     }
 
-    String message =
-        data['message'] ?? 'Unable to create SmartLog user';
+    String message = data['message'] ?? 'Unable to create SmartLog user';
 
     if (data['errors'] is Map) {
-      final errors =
-          Map<String, dynamic>.from(data['errors']);
+      final errors = Map<String, dynamic>.from(data['errors']);
 
       if (errors.isNotEmpty) {
         final firstError = errors.values.first;
 
-        if (firstError is List &&
-            firstError.isNotEmpty) {
+        if (firstError is List && firstError.isNotEmpty) {
           message = firstError.first.toString();
         }
       }
@@ -1374,8 +1011,8 @@ class ApiService {
 
     throw Exception(message);
   }
-    static Future<Map<String, dynamic>>
-      updateAdminUser({
+
+  static Future<Map<String, dynamic>> updateAdminUser({
     required int userId,
     required String dwuId,
     required String name,
@@ -1392,9 +1029,7 @@ class ApiService {
       'dwu_id': dwuId.trim(),
       'name': name.trim(),
       'email': email.trim(),
-      'phone': phone?.trim().isEmpty == true
-          ? null
-          : phone?.trim(),
+      'phone': phone?.trim().isEmpty == true ? null : phone?.trim(),
       'role': role,
       'department_id': departmentId,
       'year_level_id': yearLevelId,
@@ -1411,17 +1046,13 @@ class ApiService {
     |
     */
 
-    if (password != null &&
-        password.isNotEmpty) {
+    if (password != null && password.isNotEmpty) {
       body['password'] = password;
-      body['password_confirmation'] =
-          passwordConfirmation ?? '';
+      body['password_confirmation'] = passwordConfirmation ?? '';
     }
 
     final response = await http.put(
-      Uri.parse(
-        '$baseUrl/admin/users/$userId',
-      ),
+      Uri.parse('$baseUrl/admin/users/$userId'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -1434,13 +1065,9 @@ class ApiService {
 
     if (response.body.isNotEmpty) {
       try {
-        data = Map<String, dynamic>.from(
-          jsonDecode(response.body),
-        );
+        data = Map<String, dynamic>.from(jsonDecode(response.body));
       } catch (_) {
-        throw Exception(
-          'Invalid response from SmartLog server.',
-        );
+        throw Exception('Invalid response from SmartLog server.');
       }
     }
 
@@ -1454,39 +1081,29 @@ class ApiService {
     |--------------------------------------------------------------------------
     */
 
-    String message =
-        data['message'] ??
-        'Unable to update SmartLog user';
+    String message = data['message'] ?? 'Unable to update SmartLog user';
 
     if (data['errors'] is Map) {
-      final errors =
-          Map<String, dynamic>.from(
-        data['errors'],
-      );
+      final errors = Map<String, dynamic>.from(data['errors']);
 
       if (errors.isNotEmpty) {
-        final firstError =
-            errors.values.first;
+        final firstError = errors.values.first;
 
-        if (firstError is List &&
-            firstError.isNotEmpty) {
-          message =
-              firstError.first.toString();
+        if (firstError is List && firstError.isNotEmpty) {
+          message = firstError.first.toString();
         } else if (firstError != null) {
-          message =
-              firstError.toString();
+          message = firstError.toString();
         }
       }
     }
 
     throw Exception(message);
   }
-    // ===========================================================================
+  // ===========================================================================
   // ICT ADMIN - DEPARTMENT MANAGEMENT
   // ===========================================================================
 
-  static Future<Map<String, dynamic>>
-      getAdminDepartments({
+  static Future<Map<String, dynamic>> getAdminDepartments({
     String search = '',
     String? status,
   }) async {
@@ -1496,38 +1113,26 @@ class ApiService {
       queryParameters['search'] = search.trim();
     }
 
-    if (status != null &&
-        status.trim().isNotEmpty) {
+    if (status != null && status.trim().isNotEmpty) {
       queryParameters['status'] = status.trim();
     }
 
-    final uri = Uri.parse(
-      '$baseUrl/admin/departments',
-    ).replace(
-      queryParameters: queryParameters.isEmpty
-          ? null
-          : queryParameters,
+    final uri = Uri.parse('$baseUrl/admin/departments').replace(
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
 
     final response = await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
     Map<String, dynamic> data = {};
 
     if (response.body.isNotEmpty) {
       try {
-        data = Map<String, dynamic>.from(
-          jsonDecode(response.body),
-        );
+        data = Map<String, dynamic>.from(jsonDecode(response.body));
       } catch (_) {
-        throw Exception(
-          'Invalid response from SmartLog server.',
-        );
+        throw Exception('Invalid response from SmartLog server.');
       }
     }
 
@@ -1535,32 +1140,24 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load SmartLog departments',
-    );
+    throw Exception(data['message'] ?? 'Unable to load SmartLog departments');
   }
 
-  static Future<Map<String, dynamic>>
-      createAdminDepartment({
+  static Future<Map<String, dynamic>> createAdminDepartment({
     required String departmentCode,
     required String departmentName,
     bool isActive = true,
   }) async {
     final response = await http.post(
-      Uri.parse(
-        '$baseUrl/admin/departments',
-      ),
+      Uri.parse('$baseUrl/admin/departments'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
-        'department_code':
-            departmentCode.trim(),
-        'department_name':
-            departmentName.trim(),
+        'department_code': departmentCode.trim(),
+        'department_name': departmentName.trim(),
         'is_active': isActive,
       }),
     );
@@ -1569,13 +1166,9 @@ class ApiService {
 
     if (response.body.isNotEmpty) {
       try {
-        data = Map<String, dynamic>.from(
-          jsonDecode(response.body),
-        );
+        data = Map<String, dynamic>.from(jsonDecode(response.body));
       } catch (_) {
-        throw Exception(
-          'Invalid response from SmartLog server.',
-        );
+        throw Exception('Invalid response from SmartLog server.');
       }
     }
 
@@ -1583,27 +1176,18 @@ class ApiService {
       return data;
     }
 
-    String message =
-        data['message'] ??
-        'Unable to create SmartLog department';
+    String message = data['message'] ?? 'Unable to create SmartLog department';
 
     if (data['errors'] is Map) {
-      final errors =
-          Map<String, dynamic>.from(
-        data['errors'],
-      );
+      final errors = Map<String, dynamic>.from(data['errors']);
 
       if (errors.isNotEmpty) {
-        final firstError =
-            errors.values.first;
+        final firstError = errors.values.first;
 
-        if (firstError is List &&
-            firstError.isNotEmpty) {
-          message =
-              firstError.first.toString();
+        if (firstError is List && firstError.isNotEmpty) {
+          message = firstError.first.toString();
         } else if (firstError != null) {
-          message =
-              firstError.toString();
+          message = firstError.toString();
         }
       }
     }
@@ -1611,8 +1195,7 @@ class ApiService {
     throw Exception(message);
   }
 
-  static Future<Map<String, dynamic>>
-      updateAdminDepartment({
+  static Future<Map<String, dynamic>> updateAdminDepartment({
     required int departmentId,
     required String departmentCode,
     required String departmentName,
@@ -1629,10 +1212,8 @@ class ApiService {
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
-        'department_code':
-            departmentCode.trim(),
-        'department_name':
-            departmentName.trim(),
+        'department_code': departmentCode.trim(),
+        'department_name': departmentName.trim(),
         'is_active': isActive,
       }),
     );
@@ -1641,13 +1222,9 @@ class ApiService {
 
     if (response.body.isNotEmpty) {
       try {
-        data = Map<String, dynamic>.from(
-          jsonDecode(response.body),
-        );
+        data = Map<String, dynamic>.from(jsonDecode(response.body));
       } catch (_) {
-        throw Exception(
-          'Invalid response from SmartLog server.',
-        );
+        throw Exception('Invalid response from SmartLog server.');
       }
     }
 
@@ -1655,27 +1232,18 @@ class ApiService {
       return data;
     }
 
-    String message =
-        data['message'] ??
-        'Unable to update SmartLog department';
+    String message = data['message'] ?? 'Unable to update SmartLog department';
 
     if (data['errors'] is Map) {
-      final errors =
-          Map<String, dynamic>.from(
-        data['errors'],
-      );
+      final errors = Map<String, dynamic>.from(data['errors']);
 
       if (errors.isNotEmpty) {
-        final firstError =
-            errors.values.first;
+        final firstError = errors.values.first;
 
-        if (firstError is List &&
-            firstError.isNotEmpty) {
-          message =
-              firstError.first.toString();
+        if (firstError is List && firstError.isNotEmpty) {
+          message = firstError.first.toString();
         } else if (firstError != null) {
-          message =
-              firstError.toString();
+          message = firstError.toString();
         }
       }
     }
@@ -1686,8 +1254,7 @@ class ApiService {
   // ICT ADMIN - UNIT MANAGEMENT
   // ===========================================================================
 
-  static Future<Map<String, dynamic>>
-      getAdminUnits({
+  static Future<Map<String, dynamic>> getAdminUnits({
     String search = '',
     int? departmentId,
     int? yearLevelId,
@@ -1702,59 +1269,41 @@ class ApiService {
     }
 
     if (departmentId != null) {
-      queryParameters['department_id'] =
-          departmentId.toString();
+      queryParameters['department_id'] = departmentId.toString();
     }
 
     if (yearLevelId != null) {
-      queryParameters['year_level_id'] =
-          yearLevelId.toString();
+      queryParameters['year_level_id'] = yearLevelId.toString();
     }
 
     if (semesterId != null) {
-      queryParameters['semester_id'] =
-          semesterId.toString();
+      queryParameters['semester_id'] = semesterId.toString();
     }
 
-    if (status != null &&
-        status.trim().isNotEmpty) {
-      queryParameters['status'] =
-          status.trim();
+    if (status != null && status.trim().isNotEmpty) {
+      queryParameters['status'] = status.trim();
     }
 
-    if (requiresLogbook != null &&
-        requiresLogbook.trim().isNotEmpty) {
-      queryParameters['requires_logbook'] =
-          requiresLogbook.trim();
+    if (requiresLogbook != null && requiresLogbook.trim().isNotEmpty) {
+      queryParameters['requires_logbook'] = requiresLogbook.trim();
     }
 
-    final uri = Uri.parse(
-      '$baseUrl/admin/units',
-    ).replace(
-      queryParameters: queryParameters.isEmpty
-          ? null
-          : queryParameters,
+    final uri = Uri.parse('$baseUrl/admin/units').replace(
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
 
     final response = await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
     Map<String, dynamic> data = {};
 
     if (response.body.isNotEmpty) {
       try {
-        data = Map<String, dynamic>.from(
-          jsonDecode(response.body),
-        );
+        data = Map<String, dynamic>.from(jsonDecode(response.body));
       } catch (_) {
-        throw Exception(
-          'Invalid response from SmartLog server.',
-        );
+        throw Exception('Invalid response from SmartLog server.');
       }
     }
 
@@ -1762,14 +1311,10 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['message'] ??
-          'Unable to load SmartLog units',
-    );
+    throw Exception(data['message'] ?? 'Unable to load SmartLog units');
   }
 
-  static Future<Map<String, dynamic>>
-      createAdminUnit({
+  static Future<Map<String, dynamic>> createAdminUnit({
     required String unitCode,
     required String unitName,
     required int departmentId,
@@ -1779,9 +1324,7 @@ class ApiService {
     bool isActive = true,
   }) async {
     final response = await http.post(
-      Uri.parse(
-        '$baseUrl/admin/units',
-      ),
+      Uri.parse('$baseUrl/admin/units'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -1802,13 +1345,9 @@ class ApiService {
 
     if (response.body.isNotEmpty) {
       try {
-        data = Map<String, dynamic>.from(
-          jsonDecode(response.body),
-        );
+        data = Map<String, dynamic>.from(jsonDecode(response.body));
       } catch (_) {
-        throw Exception(
-          'Invalid response from SmartLog server.',
-        );
+        throw Exception('Invalid response from SmartLog server.');
       }
     }
 
@@ -1816,27 +1355,18 @@ class ApiService {
       return data;
     }
 
-    String message =
-        data['message'] ??
-        'Unable to create SmartLog unit';
+    String message = data['message'] ?? 'Unable to create SmartLog unit';
 
     if (data['errors'] is Map) {
-      final errors =
-          Map<String, dynamic>.from(
-        data['errors'],
-      );
+      final errors = Map<String, dynamic>.from(data['errors']);
 
       if (errors.isNotEmpty) {
-        final firstError =
-            errors.values.first;
+        final firstError = errors.values.first;
 
-        if (firstError is List &&
-            firstError.isNotEmpty) {
-          message =
-              firstError.first.toString();
+        if (firstError is List && firstError.isNotEmpty) {
+          message = firstError.first.toString();
         } else if (firstError != null) {
-          message =
-              firstError.toString();
+          message = firstError.toString();
         }
       }
     }
@@ -1844,8 +1374,7 @@ class ApiService {
     throw Exception(message);
   }
 
-  static Future<Map<String, dynamic>>
-      updateAdminUnit({
+  static Future<Map<String, dynamic>> updateAdminUnit({
     required int unitId,
     required String unitCode,
     required String unitName,
@@ -1856,9 +1385,7 @@ class ApiService {
     required bool isActive,
   }) async {
     final response = await http.put(
-      Uri.parse(
-        '$baseUrl/admin/units/$unitId',
-      ),
+      Uri.parse('$baseUrl/admin/units/$unitId'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -1879,13 +1406,9 @@ class ApiService {
 
     if (response.body.isNotEmpty) {
       try {
-        data = Map<String, dynamic>.from(
-          jsonDecode(response.body),
-        );
+        data = Map<String, dynamic>.from(jsonDecode(response.body));
       } catch (_) {
-        throw Exception(
-          'Invalid response from SmartLog server.',
-        );
+        throw Exception('Invalid response from SmartLog server.');
       }
     }
 
@@ -1893,31 +1416,108 @@ class ApiService {
       return data;
     }
 
-    String message =
-        data['message'] ??
-        'Unable to update SmartLog unit';
+    String message = data['message'] ?? 'Unable to update SmartLog unit';
 
     if (data['errors'] is Map) {
-      final errors =
-          Map<String, dynamic>.from(
-        data['errors'],
-      );
+      final errors = Map<String, dynamic>.from(data['errors']);
 
       if (errors.isNotEmpty) {
-        final firstError =
-            errors.values.first;
+        final firstError = errors.values.first;
 
-        if (firstError is List &&
-            firstError.isNotEmpty) {
-          message =
-              firstError.first.toString();
+        if (firstError is List && firstError.isNotEmpty) {
+          message = firstError.first.toString();
         } else if (firstError != null) {
-          message =
-              firstError.toString();
+          message = firstError.toString();
         }
       }
     }
 
     throw Exception(message);
+  }
+
+  // ICT ADMIN - READ-ONLY ENROLLMENT MONITORING
+  static Future<Map<String, dynamic>> getAdminEnrollments({
+    String search = '',
+    int? unitId,
+    int page = 1,
+  }) async {
+    final query = <String, String>{'page': page.toString()};
+    if (search.trim().isNotEmpty) query['search'] = search.trim();
+    if (unitId != null) query['unit_id'] = unitId.toString();
+    final uri = Uri.parse('$baseUrl/admin/enrollments')
+        .replace(queryParameters: query);
+    final response = await http.get(
+      uri,
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    final data = _assignmentResponse(response.body);
+    if (response.statusCode == 200) return data;
+    throw Exception(
+      _assignmentError(data, 'Unable to load enrollment records'),
+    );
+  }
+
+  // ICT ADMIN - LECTURER ASSIGNMENTS
+  static Future<Map<String, dynamic>> getAdminUnitAssignments() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/unit-assignments'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    final data = _assignmentResponse(response.body);
+    if (response.statusCode == 200) return data;
+    throw Exception(
+      _assignmentError(data, 'Unable to load lecturer assignments'),
+    );
+  }
+
+  static Future<Map<String, dynamic>> assignAdminUnitLecturer({
+    required int lecturerId,
+    required int unitId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/unit-assignments'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'lecturer_id': lecturerId, 'unit_id': unitId}),
+    );
+    final data = _assignmentResponse(response.body);
+    if (response.statusCode == 201) return data;
+    throw Exception(_assignmentError(data, 'Unable to assign lecturer'));
+  }
+
+  static Future<Map<String, dynamic>> unassignAdminUnitLecturer({
+    required int assignmentId,
+  }) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/admin/unit-assignments/$assignmentId'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    final data = _assignmentResponse(response.body);
+    if (response.statusCode == 200) return data;
+    throw Exception(_assignmentError(data, 'Unable to unassign lecturer'));
+  }
+
+  static Map<String, dynamic> _assignmentResponse(String body) {
+    if (body.isEmpty) return {};
+    try {
+      return Map<String, dynamic>.from(jsonDecode(body));
+    } catch (_) {
+      throw Exception('Invalid response from SmartLog server.');
+    }
+  }
+
+  static String _assignmentError(Map<String, dynamic> data, String fallback) {
+    if (data['errors'] is Map) {
+      final errors = Map<String, dynamic>.from(data['errors']);
+      if (errors.isNotEmpty) {
+        final first = errors.values.first;
+        if (first is List && first.isNotEmpty) return first.first.toString();
+        if (first != null) return first.toString();
+      }
+    }
+    return data['message']?.toString() ?? fallback;
   }
 }
